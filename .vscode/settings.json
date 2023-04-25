@@ -1,0 +1,8 @@
+{
+  "python.linting.pylintEnabled": false,
+  "python.linting.enabled": true,
+  "python.linting.pycodestyleEnabled": true,
+  "python.formatting.autopep8Path": "autopep8",
+  "cSpell.words": ["fieldlist", "slitherlink", "Slitherlink"],
+  "editor.formatOnSave": true
+}
