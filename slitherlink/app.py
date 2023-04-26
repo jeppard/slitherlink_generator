@@ -13,7 +13,8 @@ from PIL import ImageTk, Image
 
 ICONS = ['Entry', 'X', 'Pfeil_hoch', 'Pfeil_runter', 'Sechseck_Rechteck',
          'Sechseck_Wabe', 'Empty_1x4', 'Grid', 'Freihand', 'Import',
-         'Neuer_Rundweg', 'Quadratisch', 'Sechseck', 'Weiter', 'Zurück']
+         'Neuer_Rundweg', 'Quadratisch', 'Sechseck', 'Weiter', 'Zurück',
+         "Dreieckig"]
 
 
 def run():

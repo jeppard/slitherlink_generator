@@ -28,11 +28,15 @@ class EditorGui():
                                      height=size[1][1] - size[0][1] +
                                      2 * GUIOptions.MARGIN,
                                      bg=GUIOptions.BACKGROUND_COLOR)
-        self.canvas.grid(column=1, row=1)
+        self.canvas.pack()
         self.canvas.focus_set()
-        self.canvas.bind("<Button-1>", self.onClick)
+        self.screen.bind("<Button-1>", self.onClick)
         for i in range(10):
             self.canvas.bind(f"<KeyPress-{i}>", self.onNumberInputClosure(i))
+
+    def getPositionInsideCanvas(self, pos: tuple[int, int]) -> tuple[int, int]:
+        return (pos[0] - self.canvas.winfo_rootx(),
+                pos[1] - self.canvas.winfo_rooty())
 
     def draw(self):
         self.canvas.delete("all")
@@ -41,7 +45,11 @@ class EditorGui():
         self.slitherlink.draw(self.canvas)
 
     def onClick(self, event) -> None:
-        print(f"Clicked at {event.x}, {event.y}")
+        if event.widget != self.canvas:
+            # Clicked outside of canvas
+            self.selected = None
+            self.draw()
+            return
         self.selected = self.slitherlink.onClick((event.x, event.y))
         self.draw()
 
@@ -50,10 +58,11 @@ class EditorGui():
             if self.selected is not None:
                 self.selected.updateLabel(number)
             else:
-                x = self.canvas.winfo_pointerx() - self.canvas.winfo_rootx()
-                y = self.canvas.winfo_pointery() - self.canvas.winfo_rooty()
+                clickPos = (self.screen.winfo_pointerx(),
+                            self.screen.winfo_pointery())
+                pos = self.getPositionInsideCanvas(clickPos)
                 for field in self.slitherlink.fieldlist:
-                    if field.isClicked((x, y)):
+                    if field.isClicked(pos):
                         field.updateLabel(number)
             self.draw()
         return onNumberInput

@@ -42,12 +42,12 @@ class Menu():
 
     @staticmethod
     def increment(variable: tkinter.IntVar, upperbound: int) -> None:
-        if variable.get() + 1 < upperbound:
+        if variable.get() + 1 <= upperbound:
             variable.set(variable.get() + 1)
 
     @staticmethod
     def decrement(variable: tkinter.IntVar, lowerbound: int) -> None:
-        if variable.get() - 1 > lowerbound:
+        if variable.get() - 1 >= lowerbound:
             variable.set(variable.get() - 1)
 
     def mainMenu(self, prev: list[callable] = None):
@@ -97,6 +97,11 @@ class Menu():
                            prev + [self.neuerRundweg])),
                        **GUIOptions.MENU_COMMON_OPTIONS
                        ).grid(row=2, column=0)
+        tkinter.Button(self.screen, image=self.images['Dreieckig'],
+                       command=(lambda: self.getSizeDreieck(
+                           prev + [self.neuerRundweg])),
+                       **GUIOptions.MENU_COMMON_OPTIONS
+                       ).grid(row=3, column=0)
 
         # Zurück
         tkinter.Button(self.screen, image=self.images['Zurück'],
@@ -104,9 +109,7 @@ class Menu():
                        **GUIOptions.MENU_COMMON_OPTIONS
                        ).grid(row=4, column=0, pady=(20, 0))
 
-    def getSizeSquare(self, prev):
-        self.slitherlinkForm = SlitherlinkForm.SQUARE
-        self.outerForm = OuterForm.RECTANGLE
+    def getSizeCommon(self, prev):
         for widget in self.screen.winfo_children():
             widget.destroy()
 
@@ -118,6 +121,24 @@ class Menu():
                       **GUIOptions.MENU_COMMON_OPTIONS
                       ).grid(row=0, column=0, padx=(26, 0), columnspan=3)
 
+        # Weiter
+        tkinter.Button(self.screen, image=self.images['Weiter'],
+                       command=self.generateSlitherlink,
+                       **GUIOptions.MENU_COMMON_OPTIONS
+                       ).grid(row=4,
+                              column=0,
+                              columnspan=3)
+        # Zurück
+        tkinter.Button(self.screen, image=self.images['Zurück'],
+                       command=lambda: prev[-1](prev[:-1]),
+                       **GUIOptions.MENU_COMMON_OPTIONS
+                       ).grid(row=5,
+                              column=0,
+                              columnspan=3)
+
+    def getSizeRechteck(self, prev):
+        self.getSizeCommon(prev)
+        self.outerForm = OuterForm.RECTANGLE
         # Linke Seite
         tkinter.Label(self.screen, image=self.images['Entry'],
                       **GUIOptions.MENU_COMMON_OPTIONS
@@ -162,20 +183,13 @@ class Menu():
                        **GUIOptions.MENU_COMMON_OPTIONS
                        ).grid(row=3, column=2)
 
-        # Weiter
-        tkinter.Button(self.screen, image=self.images['Weiter'],
-                       command=self.generateSlitherlink,
-                       **GUIOptions.MENU_COMMON_OPTIONS
-                       ).grid(row=4,
-                              column=0,
-                              columnspan=3)
-        # Zurück
-        tkinter.Button(self.screen, image=self.images['Zurück'],
-                       command=lambda: prev[-1](prev[:-1]),
-                       **GUIOptions.MENU_COMMON_OPTIONS
-                       ).grid(row=5,
-                              column=0,
-                              columnspan=3)
+    def getSizeDreieck(self, prev):
+        self.slitherlinkForm = SlitherlinkForm.TRIANGLE
+        self.getSizeRechteck(prev)
+
+    def getSizeSquare(self, prev):
+        self.slitherlinkForm = SlitherlinkForm.SQUARE
+        self.getSizeRechteck(prev)
 
     def getSizeSechseck(self, prev, isOuterFormWabe=True):
         self.slitherlinkForm = SlitherlinkForm.HEXAGON
