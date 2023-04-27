@@ -1,9 +1,17 @@
+from slitherlink.gui.line import LineGui
+from slitherlink.model.field import Field
 from ..model.slitherlink import Slitherlink
 from .field import FieldGui
 
 
 class SlitherlinkGui(Slitherlink):
     fieldlist: list[FieldGui]
+    linelist: list[LineGui]
+
+    def __init__(self, fieldlist: list[FieldGui]) -> None:
+        super().__init__(fieldlist)
+        self.linelist = list(
+            set([line for field in fieldlist for line in field.linelist]))
 
     def draw(self, screen):
         [field.draw(screen) for field in self.fieldlist]

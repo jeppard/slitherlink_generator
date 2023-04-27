@@ -20,7 +20,6 @@ class FieldGui(Field):
             [(point.x, point.y) for point in pointlist])
         self.middle = polylabel.polylabel([
             [(point.x, point.y) for point in pointlist]])
-        self.selected = False
 
     def draw(self, screen: tkinter.Canvas, selected: bool = False):
         [line.draw(screen) for line in self.linelist]
