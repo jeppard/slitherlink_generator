@@ -56,9 +56,9 @@ class SlitherlinkGenerator():
         )
         fields = [
             FieldGui([
-                points[y][x//2],
-                points[y+((x+y) % 2)][x//2+1-((x+y) % 2)],
-                points[y+1][x//2-(x % 2)],
+                points[y][x//2 + (x % 2) * (y % 2 == 0)],
+                points[y + (x+y) % 2][x//2 + 1],
+                points[y+1][(x + y % 2)//2],
             ],
                 [horizontalLines[y+x % 2][x//2],
                  verticalLines[y][x+1-x % 2],
