@@ -66,9 +66,9 @@ class EditorGui():
                 return
 
     def onRightClick(self, event: tkinter.Event) -> None:
+        self.selected = None
         if event.widget != self.canvas:
             # Clicked outside of canvas
-            self.selected = None
             self.draw()
             return
         for line in self.slitherlink.linelist:

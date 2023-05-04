@@ -23,6 +23,8 @@ class Line():
 
     @state.setter
     def state(self, state: LineState) -> None:
+        if self._state != LineState.UNKNOWN:
+            raise ValueError("Line state already set")
         self._state = state
         for point in self.points:
             point.update()
