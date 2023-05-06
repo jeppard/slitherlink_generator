@@ -11,11 +11,16 @@ class Field():
         for line in linelist:
             line.registerField(self)
 
+    def isSolved(self) -> bool:
+        if self.number is None:
+            return True
+        numSetLines = sum(1 for line in self.linelist if
+                          line.state == LineState.SET)
+        return numSetLines == self.number
+
     def updateLabel(self, label: int | None) -> None:
         numSetLines = sum(1 for line in self.linelist if
                           line.state == LineState.SET)
-        numUnsetLines = sum(1 for line in self.linelist if
-                            line.state == LineState.UNSET)
         numUnknownLines = sum(1 for line in self.linelist if
                               line.state == LineState.UNKNOWN)
         if numSetLines > label:
@@ -48,7 +53,3 @@ class Field():
             for line in self.linelist:
                 if line.state == LineState.UNKNOWN:
                     line.state = LineState.SET
-        elif numUnsetLines + numUnknownLines == len(self.linelist) - self.number:
-            for line in self.linelist:
-                if line.state == LineState.UNKNOWN:
-                    line.state = LineState.UNSET

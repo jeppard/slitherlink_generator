@@ -13,6 +13,11 @@ class Point():
         self.y = y
         self.lines = []
 
+    def isSolved(self) -> bool:
+        numSetLines = sum(1 for line in self.lines if
+                          line.state == LineState.SET)
+        return numSetLines == 2 or numSetLines == 0
+
     def registerLine(self, line: 'Line') -> None:
         self.lines.append(line)
 

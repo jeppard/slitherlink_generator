@@ -14,30 +14,8 @@ class Line():
         self.points = points
         for p in points:
             p.registerLine(self)
-        self._state: LineState = LineState.UNKNOWN
+        self.state: LineState = LineState.UNKNOWN
         self.fields = []
-
-    @property
-    def state(self) -> LineState:
-        return self._state
-
-    @state.setter
-    def state(self, state: LineState) -> None:
-        if self._state != LineState.UNKNOWN:
-            raise ValueError("Line state already set")
-        self._state = state
-        for point in self.points:
-            point.update()
-        for field in self.fields:
-            field.update()
 
     def registerField(self, field: 'Field') -> None:
         self.fields.append(field)
-
-    def toggleState(self) -> None:
-        if self.state == LineState.UNKNOWN:
-            self.state = LineState.SET
-        elif self.state == LineState.SET:
-            self.state = LineState.UNSET
-        elif self.state == LineState.UNSET:
-            self.state = LineState.UNKNOWN

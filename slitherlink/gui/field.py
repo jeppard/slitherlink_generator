@@ -39,7 +39,4 @@ class FieldGui(Field):
         return self.isClicked(clickPos)
 
     def isClicked(self, clickPos: tuple[int, int]) -> bool:
-        for line in self.linelist:
-            if line.isClicked(clickPos):
-                return False
         return self.bbox.contains(shapely.geometry.Point(clickPos))

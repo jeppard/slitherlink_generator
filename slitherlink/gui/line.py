@@ -40,10 +40,3 @@ class LineGui(Line):
                                    width=GUIOptions.LINE_WIDTH)
             case _:
                 raise ValueError("Unknown LineState")
-
-    def onClick(self, clickPos: tuple[int, int]) -> None:
-        if self.isClicked(clickPos):
-            self.toggleState()
-
-    def isClicked(self, clickPos: tuple[int, int]) -> bool:
-        return self.bbox.contains(shapely.geometry.Point(clickPos))
