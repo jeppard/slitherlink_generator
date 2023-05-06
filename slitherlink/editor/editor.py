@@ -54,12 +54,12 @@ class EditorGui():
             self.draw()
             return
         self.selected = self.slitherlink.onClick((event.x, event.y))
-        for line in self.slitherlink.linelist:
+        for line in self.slitherlink.lines:
             if line.isClicked((event.x, event.y)):
                 line.state = LineState.SET
                 self.draw()
                 return
-        for field in self.slitherlink.fieldlist:
+        for field in self.slitherlink.fields:
             if field.isClicked((event.x, event.y)):
                 self.selected = field
                 self.draw()
@@ -71,7 +71,7 @@ class EditorGui():
             # Clicked outside of canvas
             self.draw()
             return
-        for line in self.slitherlink.linelist:
+        for line in self.slitherlink.lines:
             if line.isClicked((event.x, event.y)):
                 line.state = LineState.UNSET
                 self.draw()
@@ -85,7 +85,7 @@ class EditorGui():
                 clickPos = (self.screen.winfo_pointerx(),
                             self.screen.winfo_pointery())
                 pos = self.getPositionInsideCanvas(clickPos)
-                for field in self.slitherlink.fieldlist:
+                for field in self.slitherlink.fields:
                     if field.isClicked(pos):
                         field.updateLabel(number)
             self.draw()

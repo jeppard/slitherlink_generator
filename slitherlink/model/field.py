@@ -1,6 +1,11 @@
+from typing import Generator
 from .point import Point
 from .line import Line
 from .line_state import LineState
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .slitherlink import Slitherlink
 
 
 class Field():
@@ -10,45 +15,36 @@ class Field():
         self.number: int | None = None
         for line in linelist:
             line.registerField(self)
+        self.slitherlink: Slitherlink | None = None
 
     def updateLabel(self, label: int | None) -> None:
-        numSetLines = sum(1 for line in self.linelist if
-                          line.state == LineState.SET)
-        numUnsetLines = sum(1 for line in self.linelist if
-                            line.state == LineState.UNSET)
-        numUnknownLines = sum(1 for line in self.linelist if
-                              line.state == LineState.UNKNOWN)
-        if numSetLines > label:
-            raise ValueError("Label is too low")
-        if numSetLines + numUnknownLines < label:
-            raise ValueError("Label is too high")
-        if self.number is not None:
-            raise RuntimeError("Label is already set")
-        try:
-            self.number = label
-            self.update()
-        except Exception as e:
-            self.number = None
-            raise e
+        self.number = label
+        if self.slitherlink.solver.isSolvable():
+            lines = list(
+                set(line for point in self.pointlist for line in point.lines))
+            for line in lines:
+                self.slitherlink.solver.solve(line)
+            return
+        self.number = None
+        raise ValueError("Unsolvable")
 
-    def update(self) -> None:
+    def update(self, depth=1):
+        linesToSet: list[Line] = []
+        linesToUnset: list[Line] = []
+        visitedPoints: set[Point] = set()
         if self.number is None:
             return  # No information to be gained
         numSetLines = sum(1 for line in self.linelist if
                           line.state == LineState.SET)
-        numUnsetLines = sum(1 for line in self.linelist if
-                            line.state == LineState.UNSET)
-        numUnknownLines = sum(1 for line in self.linelist if
-                              line.state == LineState.UNKNOWN)
+        unknownLines = [line for line in self.linelist if line.state ==
+                        LineState.UNKNOWN]
+        numUnknownLines = len(unknownLines)
         if numSetLines == self.number:
             for line in self.linelist:
                 if line.state == LineState.UNKNOWN:
-                    line.state = LineState.UNSET
+                    linesToUnset += [line]
         elif numSetLines + numUnknownLines == self.number:
             for line in self.linelist:
                 if line.state == LineState.UNKNOWN:
-                    line.state = LineState.SET
-        elif numUnsetLines + numUnknownLines == len(self.linelist) - self.number:
-            for line in self.linelist:
-                if line.state == LineState.UNKNOWN:
-                    line.state = LineState.UNSET
+                    linesToSet += [line]
+        i = (yield (linesToSet, linesToUnset))

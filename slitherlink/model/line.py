@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+import z3
 
 from .line_state import LineState
 
@@ -11,11 +12,23 @@ class Line():
     fields: list['Field']
 
     def __init__(self, points: tuple['Point', 'Point']) -> None:
+        if (points[0] > points[1]):
+            points = (points[1], points[0])
         self.points = points
         for p in points:
             p.registerLine(self)
         self._state: LineState = LineState.UNKNOWN
         self.fields = []
+        self.z3Var = z3.Bool(
+            f"Line {points[0].x},{points[0].y} to {points[1].x},{points[1].y}")
+
+    def __hash__(self) -> int:
+        return hash(self.points)
+
+    def __eq__(self, __value: object) -> bool:
+        if not isinstance(__value, Line):
+            return NotImplemented
+        return self.points == __value.points
 
     @property
     def state(self) -> LineState:
@@ -23,21 +36,12 @@ class Line():
 
     @state.setter
     def state(self, state: LineState) -> None:
-        if self._state != LineState.UNKNOWN:
-            raise ValueError("Line state already set")
         self._state = state
-        for point in self.points:
-            point.update()
-        for field in self.fields:
-            field.update()
 
     def registerField(self, field: 'Field') -> None:
         self.fields.append(field)
 
-    def toggleState(self) -> None:
-        if self.state == LineState.UNKNOWN:
-            self.state = LineState.SET
-        elif self.state == LineState.SET:
-            self.state = LineState.UNSET
-        elif self.state == LineState.UNSET:
-            self.state = LineState.UNKNOWN
+    def __eq__(self, __value: object) -> bool:
+        if not isinstance(__value, Line):
+            return NotImplemented
+        return self.points == __value.points
