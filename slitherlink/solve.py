@@ -1,4 +1,3 @@
-
 from slitherlink.model.slitherlink import Slitherlink
 
 
