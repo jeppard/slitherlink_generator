@@ -1,3 +1,4 @@
+from slitherlink.model.error import UnsolvableException
 from .point import Point
 from .line import Line
 from .line_state import LineState
@@ -41,7 +42,7 @@ class Field():
         try:
             self.number = label
             self.update()
-        except Exception as e:
+        except UnsolvableException as e:
             self.number = None
             raise e
 
@@ -54,6 +55,8 @@ class Field():
                             line.state == LineState.UNSET)
         numUnknownLines = sum(1 for line in self.linelist if
                               line.state == LineState.UNKNOWN)
+        if numSetLines + numUnknownLines < self.number:
+            raise UnsolvableException
         if numSetLines == self.number:
             for line in self.linelist:
                 if line.state == LineState.UNKNOWN:
