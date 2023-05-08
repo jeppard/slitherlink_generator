@@ -18,7 +18,16 @@ class Field():
                           line.state == LineState.SET)
         return numSetLines == self.number
 
-    def updateLabel(self, label: int | None) -> None:
+    def isSolvable(self) -> bool:
+        if self.number is None:
+            return True
+        numSetLines = sum(
+            1 for line in self.linelist if line.state == LineState.SET)
+        numUnknownLines = sum(
+            1 for line in self.linelist if line.state == LineState.UNKNOWN)
+        return numSetLines + numUnknownLines >= self.number
+
+    def updateLabel(self, label: int) -> None:
         numSetLines = sum(1 for line in self.linelist if
                           line.state == LineState.SET)
         numUnknownLines = sum(1 for line in self.linelist if

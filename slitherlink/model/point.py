@@ -18,6 +18,15 @@ class Point():
                           line.state == LineState.SET)
         return numSetLines == 2 or numSetLines == 0
 
+    def isSolvable(self) -> bool:
+        numSetLines = sum(
+            1 for line in self.lines if line.state == LineState.SET)
+        if numSetLines > 2:
+            return False
+        numUnknownLines = sum(
+            1 for line in self.lines if line.state == LineState.UNKNOWN)
+        return not (numSetLines == 1 and numUnknownLines == 0)
+
     def registerLine(self, line: 'Line') -> None:
         self.lines.append(line)
 
