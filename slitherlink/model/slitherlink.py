@@ -1,4 +1,5 @@
 
+from slitherlink import solver
 from slitherlink.model.line import Line
 from slitherlink.model.line_state import LineState
 from slitherlink.model.point import Point
@@ -14,7 +15,11 @@ class Slitherlink():
             set([line for field in fieldlist for line in field.linelist]))
 
     def isSolvable(self) -> bool:
-        return True  # TODO: Implement
+        if solver.isSolved(self):
+            return True
+        if self.hasOnePath():
+            return False
+        return True
 
     def hasOnePath(self) -> bool:
         graph: dict[Point, list[Point]] = {}
@@ -27,6 +32,8 @@ class Slitherlink():
                 graph[line.points[1]] = []
             graph[line.points[0]].append(line.points[1])
             graph[line.points[1]].append(line.points[0])
+        if num_lines == 0:
+            return False
         visited: set[Point] = set()
         try:
             queue = [next(iter(graph))]
