@@ -18,3 +18,4 @@ class GUIOptions:
         'relief': 'flat',
         'bg': 'white'
     }
+    SOLVED_BG_COLOR = "lightgreen"

@@ -13,28 +13,42 @@ class Line():
     fields: list['Field']
 
     def __init__(self, points: tuple['Point', 'Point']) -> None:
+        if points[0] > points[1]:
+            points = points[1], points[0]
         self.points = points
         for p in points:
             p.registerLine(self)
         self._state: LineState = LineState.UNKNOWN
         self.fields = []
 
+    def __hash__(self) -> int:
+        return hash(self.points)
+
+    def __eq__(self, __value: object) -> bool:
+        if not isinstance(__value, Line):
+            return NotImplemented
+        return self.points == __value.points
+
     @property
     def state(self):
         return self._state
 
-    @state.setter
-    def state(self, state: LineState):
-        prev = self._state
+    def setState(self, state: LineState) -> list['Line']:
+        updated: list['Line'] = [self]
         self._state = state
+        if state == LineState.UNKNOWN:
+            return updated
         try:
             for point in self.points:
-                point.update()
+                updated += point.update()
             for field in self.fields:
-                field.update()
+                updated += field.update()
         except UnsolvableException as e:
-            self._state = prev
+            for line in updated:
+                line.setState(LineState.UNKNOWN)
+            self._state = LineState.UNKNOWN
             raise e
+        return updated
 
     def registerField(self, field: 'Field') -> None:
         self.fields.append(field)

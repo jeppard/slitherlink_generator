@@ -46,9 +46,10 @@ class Field():
             self.number = None
             raise e
 
-    def update(self) -> None:
+    def update(self) -> list[Line]:
+        updated = []
         if self.number is None:
-            return  # No information to be gained
+            return updated  # No information to be gained
         numSetLines = sum(1 for line in self.linelist if
                           line.state == LineState.SET)
         numUnsetLines = sum(1 for line in self.linelist if
@@ -56,12 +57,14 @@ class Field():
         numUnknownLines = sum(1 for line in self.linelist if
                               line.state == LineState.UNKNOWN)
         if numSetLines + numUnknownLines < self.number:
-            raise UnsolvableException
+            raise UnsolvableException("Not enough Lines can be set on field" +
+                                      f'{self.pointlist}')
         if numSetLines == self.number:
             for line in self.linelist:
                 if line.state == LineState.UNKNOWN:
-                    line.state = LineState.UNSET
+                    updated += line.setState(LineState.UNSET)
         elif numSetLines + numUnknownLines == self.number:
             for line in self.linelist:
                 if line.state == LineState.UNKNOWN:
-                    line.state = LineState.SET
+                    updated += line.setState(LineState.SET)
+        return updated

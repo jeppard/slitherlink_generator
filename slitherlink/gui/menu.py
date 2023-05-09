@@ -9,7 +9,7 @@ from .gui_options import GUIOptions
 
 
 class Menu():
-    def __init__(self, screen: tkinter.Canvas,
+    def __init__(self, screen: tkinter.Canvas | tkinter.Toplevel,
                  images: dict[str, ImageTk.PhotoImage]) -> None:
         self.screen = screen
         self.images = images
@@ -50,9 +50,9 @@ class Menu():
         if variable.get() - 1 >= lowerbound:
             variable.set(variable.get() - 1)
 
-    def mainMenu(self, prev: list[callable] = None):
+    def mainMenu(self, prev=None):
         if prev is None:
-            prev = [lambda: None]
+            prev = [lambda _: None]
         for widget in self.screen.winfo_children():
             widget.destroy()
 
@@ -72,9 +72,9 @@ class Menu():
                        **GUIOptions.MENU_COMMON_OPTIONS
                        ).grid(row=1, column=0)
 
-    def neuerRundweg(self, prev: list[callable] = None):
+    def neuerRundweg(self, prev=None):
         if prev is None:
-            prev = [lambda: None]
+            prev = [lambda _: None]
         for widget in self.screen.winfo_children():
             widget.destroy()
 

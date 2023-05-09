@@ -1,3 +1,4 @@
+import dataclasses
 from typing import TYPE_CHECKING
 from slitherlink.model.error import UnsolvableException
 
@@ -6,13 +7,12 @@ if TYPE_CHECKING:
     from slitherlink.model.line import Line
 
 
+@dataclasses.dataclass(order=True, frozen=True)
 class Point():
-    lines: list['Line']
-
-    def __init__(self, x: int, y: int) -> None:
-        self.x = x
-        self.y = y
-        self.lines = []
+    x: int
+    y: int
+    lines: list['Line'] = dataclasses.field(
+        default_factory=list, init=False, repr=False, compare=False)
 
     def isSolved(self) -> bool:
         numSetLines = sum(1 for line in self.lines if
@@ -31,7 +31,8 @@ class Point():
     def registerLine(self, line: 'Line') -> None:
         self.lines.append(line)
 
-    def update(self) -> None:
+    def update(self):
+        updated: list[Line] = []
         numSet = sum(1 for line in self.lines if line.state == LineState.SET)
         numUnknown = sum(
             1 for line in self.lines if line.state == LineState.UNKNOWN)
@@ -44,14 +45,15 @@ class Point():
         if numSet == 2:
             for line in self.lines:
                 if line.state == LineState.UNKNOWN:
-                    line.state = LineState.UNSET
+                    updated += line.setState(LineState.UNSET)
         if numUnknown != 1:
-            return
+            return updated
         if numSet == 1:
             for line in self.lines:
                 if line.state == LineState.UNKNOWN:
-                    line.state = LineState.SET
+                    updated += line.setState(LineState.SET)
         else:
             for line in self.lines:
                 if line.state == LineState.UNKNOWN:
-                    line.state = LineState.UNSET
+                    updated += line.setState(LineState.UNSET)
+        return updated

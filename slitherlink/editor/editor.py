@@ -1,10 +1,10 @@
 import tkinter
+from slitherlink import solver
 from slitherlink.gui.field import FieldGui
 
 from slitherlink.gui.gui_options import GUIOptions
 from slitherlink.gui.line import LineGui
 from slitherlink.model.line_state import LineState
-from slitherlink.solve import isSolved
 from ..gui.slitherlink import SlitherlinkGui
 from PIL import ImageTk
 
@@ -20,7 +20,7 @@ class EditorGui():
         self.images = images
         self.screen = screen
         size = self.slitherlink.getSize()
-        self.selected: FieldGui | LineGui = None
+        self.selected: FieldGui | None = None
 
         for widget in self.screen.winfo_children():
             widget.destroy()
@@ -43,11 +43,14 @@ class EditorGui():
 
     def draw(self):
         self.canvas.delete("all")
+        isSolved = solver.isSolved(self.slitherlink)
+        if isSolved:
+            self.canvas.configure(bg=GUIOptions.SOLVED_BG_COLOR)
+        else:
+            self.canvas.configure(bg=GUIOptions.BACKGROUND_COLOR)
         if self.selected is not None:
             self.selected.draw(self.canvas, selected=True)
         self.slitherlink.draw(self.canvas)
-        print('EditorGui.draw: SLitherlink is solved:',
-              isSolved(self.slitherlink))
 
     def onLeftClick(self, event: tkinter.Event) -> None:
         if event.widget != self.canvas:
@@ -61,10 +64,11 @@ class EditorGui():
                 self.draw()
                 return
 
-    def onNumberInputClosure(self, number: int) -> callable:
+    def onNumberInputClosure(self, number: int):
         def onNumberInput(_: tkinter.Event):
             if self.selected is not None:
                 self.selected.updateLabel(number)
+                solver.solve(self.slitherlink, self.selected)
             else:
                 clickPos = (self.screen.winfo_pointerx(),
                             self.screen.winfo_pointery())
@@ -72,5 +76,6 @@ class EditorGui():
                 for field in self.slitherlink.fieldlist:
                     if field.isClicked(pos):
                         field.updateLabel(number)
+                        solver.solve(self.slitherlink, field)
             self.draw()
         return onNumberInput
