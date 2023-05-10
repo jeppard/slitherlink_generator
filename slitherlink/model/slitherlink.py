@@ -13,6 +13,9 @@ class Slitherlink():
             set([p for field in fieldlist for p in field.pointlist]))
         self.linelist = list(
             set([line for field in fieldlist for line in field.linelist]))
+        for line in self.linelist:
+            for p in line.points:
+                p.registerLine(line)
 
     def hasOnePath(self) -> bool:
         graph: dict[Point, list[Point]] = {}

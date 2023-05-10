@@ -1,4 +1,4 @@
-from slitherlink.model.error import UnsolvableException
+from slitherlink.model.error import UnsolvableError
 from .point import Point
 from .line import Line
 from .line_state import LineState
@@ -42,7 +42,7 @@ class Field():
         try:
             self.number = label
             self.update()
-        except UnsolvableException as e:
+        except UnsolvableError as e:
             self.number = None
             raise e
 
@@ -57,11 +57,11 @@ class Field():
         numUnknownLines = sum(1 for line in self.linelist if
                               line.state == LineState.UNKNOWN)
         if numSetLines + numUnknownLines < self.number:
-            raise UnsolvableException("Not enough Lines can be set on field" +
-                                      f'{self}')
+            raise UnsolvableError("Not enough Lines can be set on field" +
+                                  f'{self}')
         if numSetLines > self.number:
-            raise UnsolvableException("To much Lines set on field" +
-                                      f'{self}')
+            raise UnsolvableError("To much Lines set on field" +
+                                  f'{self}')
         if numSetLines == self.number:
             for line in self.linelist:
                 if line.state == LineState.UNKNOWN:

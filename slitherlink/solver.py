@@ -1,9 +1,11 @@
 from collections import deque
 import copy
-from slitherlink.model.error import UnsolvableException
+from slitherlink.model.error import StateError, UnsolvableError
 
 from slitherlink.model.line_state import LineState
 from typing import TYPE_CHECKING
+
+from slitherlink.util.filter import filterLine
 if TYPE_CHECKING:
     from slitherlink.model.field import Field
     from slitherlink.model.line import Line
@@ -11,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class SolverOptions:
-    MAX_DEPTH = 4
+    MAX_DEPTH = 1
 
 
 def timeit(func):
@@ -51,83 +53,84 @@ def getAllEndLines(slitherlink: 'Slitherlink'):
         l = copy.deepcopy(line)
         try:
             l.setState(LineState.SET)
-        except UnsolvableException:
+        except UnsolvableError:
             pass
         else:
             yield [l]
         l = copy.deepcopy(line)
         try:
             l.setState(LineState.UNSET)
-        except UnsolvableException:
+        except UnsolvableError:
             pass
         else:
             yield [l]
 
 
-@timeit
+# @timeit
 def isSolvable(slitherlink: 'Slitherlink'):
-    slitherlink = copy.deepcopy(slitherlink)
+    def getConnected(line: 'Line', lines: set['Line'] | None = None):
+        if lines is None:
+            lines = set()
+        for l in filterLine(line.getNeighbors(), LineState.SET):
+            if l not in lines:
+                lines.add(l)
+                lines.update(getConnected(l, lines))
+        return lines
     if not (all(field.isSolvable() for field in slitherlink.fieldlist) and
             all(point.isSolvable() for point in slitherlink.points)):
         return False
-    # TODO
     if isSolved(slitherlink):
         return True
-    stack = deque(getAllEndLines(slitherlink))
-    try:
-        while stack:
-            current = stack.pop()
-            updated: list['Line'] = []
-            try:
-                for line in current:
-                    for l in slitherlink.linelist:
-                        if line != l:
-                            continue
-                        updated += l.setState(line.state)
-                if isSolved(slitherlink):
-                    return True
-            except UnsolvableException:
-                pass
-            else:
-                for line in updated:
-                    for point in line.points:
-                        for l in point.lines:
-                            if l.state != LineState.UNKNOWN:
-                                continue
-                            try:
-                                i = copy.deepcopy(l)
-                                i.setState(LineState.SET)
-                            except UnsolvableException:
-                                pass
-                            else:
-                                stack.append(current + [i])
-                            try:
-                                i = copy.deepcopy(l)
-                                i.setState(LineState.UNSET)
-                            except UnsolvableException:
-                                pass
-                            else:
-                                stack.append(current + [i])
-        return False
-    except UnsolvableException as _:
-        print("UNSOLVABLE")
-        return False
+    # TODO check if multiple loops are present
+    paths: list[set['Line']] = []
+    seen: set['Line'] = set()
+    for line in slitherlink.linelist:
+        if line in seen:
+            continue
+        if line.state != LineState.SET:
+            continue
+        connected = getConnected(line)
+        paths.append(connected)
+        seen.update(connected)
+    for path in paths:
+        # ToDo detect Cycle
+        if all(p.isSolved() for l in path for p in l.points):
+            return False
+    # TODO check if paths are connectable
+    return None
 
 
 def solve(slitherlink: 'Slitherlink', start: 'Field'):
-    lineQueue: deque[tuple['Line', int]] = deque(
-        (line, 1) for line in start.linelist)
+    lineQueue: deque[tuple[list[tuple['Line', LineState]], 'Line']] = deque(
+        ([], line) for line in start.linelist
+        if line.state == LineState.UNKNOWN)
     while lineQueue:
-        currentLine, depth = lineQueue.popleft()
+        prevLines, currentLine = lineQueue.popleft()
+        updated = []
+        try:
+            if any(line.state != LineState.UNKNOWN
+                   for line, _ in prevLines) or \
+                    currentLine.state != LineState.UNKNOWN:
+                continue
+            for line, state in prevLines:
+                updated += line.setState(state)
+        except UnsolvableError:
+            for line in updated:
+                line.setState(LineState.UNKNOWN)
+            continue
         if currentLine.state != LineState.UNKNOWN:
             continue
         try:
             result = currentLine.setState(LineState.SET)
-            if not isSolvable(slitherlink):
-                raise UnsolvableException(
+            if isSolvable(slitherlink) is False:
+                raise UnsolvableError(
                     "Slitherlink contectivity Constraint")
-        except UnsolvableException as _:
-            currentLine.setState(LineState.UNSET)
+        except UnsolvableError as _:
+            updated = currentLine.setState(LineState.UNSET)
+            lineQueue.clear()
+            lineQueue.extend(([], l) for line in updated
+                             for l in filterLine(
+                line.getNeighbors(), LineState.UNKNOWN))
 
         else:
             try:
@@ -135,20 +138,38 @@ def solve(slitherlink: 'Slitherlink', start: 'Field'):
                 for line in result:
                     line.setState(LineState.UNKNOWN)
                 unsetLines = currentLine.setState(LineState.UNSET)
-                if not isSolvable(slitherlink):
+                if isSolvable(slitherlink) is False:
                     for line in unsetLines:
                         line.setState(LineState.UNKNOWN)
-                    raise UnsolvableException(
+                    raise UnsolvableError(
                         "Slitherlink contectivity Constraint")
-            except UnsolvableException as _:
-                currentLine.setState(LineState.SET)
+            except UnsolvableError as _:
+                updated = currentLine.setState(LineState.SET)
+                lineQueue.clear()
+                lineQueue.extend(([], l) for line in updated
+                                 for l in filterLine(
+                    line.getNeighbors(), LineState.UNKNOWN))
             else:
+                changedLines: list['Line'] = []
                 for line in unsetLines:
                     if line not in setLines:
                         line.setState(LineState.UNKNOWN)
-                        # TODO higher Depth
                         continue
                     stateSet = setLines[setLines.index(line)].state
                     if line.state != stateSet:
                         line.setState(LineState.UNKNOWN)
-                        # TODO higher Depth
+                    else:
+                        # Line Changed
+                        changedLines.append(line)
+                if len(changedLines) == 0:
+                    if len(prevLines) + 1 >= SolverOptions.MAX_DEPTH:
+                        continue
+                    lineQueue.extend((prevLines + [(currentLine, state)], line)
+                                     for line in filterLine(
+                        currentLine.getNeighbors(), LineState.UNKNOWN)
+                        for state in (LineState.SET, LineState.UNSET))
+                else:
+                    lineQueue.clear()
+                    lineQueue.extend(([], l) for line in changedLines
+                                     for l in filterLine(line.getNeighbors(),
+                                                         LineState.UNKNOWN))

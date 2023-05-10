@@ -1,6 +1,7 @@
+import copy
 import dataclasses
 from typing import TYPE_CHECKING
-from slitherlink.model.error import UnsolvableException
+from slitherlink.model.error import UnsolvableError
 
 from slitherlink.model.line_state import LineState
 if TYPE_CHECKING:
@@ -37,10 +38,10 @@ class Point():
         numUnknown = sum(
             1 for line in self.lines if line.state == LineState.UNKNOWN)
         if numSet > 2:
-            raise UnsolvableException(
+            raise UnsolvableError(
                 f"To many Lines set at Point ({self.x},{self.y})")
         if numSet == 1 and numUnknown == 0:
-            raise UnsolvableException(
+            raise UnsolvableError(
                 f"Not enough Lines set at Point ({self.x},{self.y})")
         if numSet == 2:
             for line in self.lines:

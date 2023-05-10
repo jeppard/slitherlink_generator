@@ -101,24 +101,21 @@ class SlitherlinkGenerator():
         return SlitherlinkGui(fields)
 
     @staticmethod
-    def getHexagonPosition(x: int, y: int) -> tuple[int, int]:
+    def getHexagonPosition(x: int, y: int, offset=False) -> tuple[int, int]:
         return ((2*x + (y % 4 in [0, 3])) * GUIOptions.STEP +
-                GUIOptions.MARGIN,
+                GUIOptions.MARGIN - (offset * GUIOptions.STEP),
                 (y + y//2) * 0.5 * GUIOptions.STEP + GUIOptions.MARGIN)
 
     @staticmethod
-    def generate_hexagon_hexagon(size: int) -> SlitherlinkGui:
-        sideLength = size
-        size = (2*size-1, 2*size-1)
+    def generate_hexagon_hexagon(sideLength: int) -> SlitherlinkGui:
+        size: tuple[int, int] = (2*sideLength-1, 2*sideLength-1)
         points = tuple(
-            tuple(PointGui(*SlitherlinkGenerator.getHexagonPosition(x, y))
+            tuple(PointGui(
+                *SlitherlinkGenerator.getHexagonPosition(x, y,
+                                                         sideLength % 2 == 0))
                   for x in range(size[0] + 1))
             for y in range(2*size[1] + 2)
         )
-        if (sideLength % 2 == 0):
-            for tup in points:
-                for p in tup:
-                    p.updateX(p.x - GUIOptions.STEP)
         horizontalLines = tuple(
             tuple(
                 LineGui((points[2*y + ((x+y) % 2 == 0)][x//2],

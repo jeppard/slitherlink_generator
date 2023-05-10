@@ -1,6 +1,7 @@
+import copy
 from typing import TYPE_CHECKING
 
-from slitherlink.model.error import UnsolvableException
+from slitherlink.model.error import StateError, UnsolvableError
 
 from .line_state import LineState
 
@@ -17,25 +18,35 @@ class Line():
         if points[0] > points[1]:
             points = points[1], points[0]
         self.points = points
-        for p in points:
-            p.registerLine(self)
         self._state: LineState = LineState.UNKNOWN
         self.fields = []
 
     def __hash__(self) -> int:
         return hash(self.points)
 
-    def __eq__(self, __value: object) -> bool:
-        if not isinstance(__value, Line):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Line):
             return NotImplemented
-        return self.points == __value.points
+        return self.points == other.points
+
+    def __repr__(self) -> str:
+        return f'Line: {self.points} is {self._state}'
 
     @property
     def state(self):
         return self._state
 
+    def getNeighbors(self):
+        for point in self.points:
+            yield from point.lines
+
     def setState(self, state: LineState) -> list['Line']:
         updated: list['Line'] = [self]
+        if self._state != LineState.UNKNOWN:
+            if state != LineState.UNKNOWN:
+                raise StateError("Line is allready set")
+            self._state = LineState.UNKNOWN
+            return updated
         self._state = state
         if state == LineState.UNKNOWN:
             return updated
@@ -44,7 +55,7 @@ class Line():
                 updated += point.update()
             for field in self.fields:
                 updated += field.update()
-        except UnsolvableException as e:
+        except UnsolvableError as e:
             for line in updated:
                 line.setState(LineState.UNKNOWN)
             self._state = LineState.UNKNOWN
