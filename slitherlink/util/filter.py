@@ -1,24 +1,20 @@
-from collections.abc import Iterable
-from slitherlink.model.field import Field
+from typing import TYPE_CHECKING
+from typing import Iterable
+if TYPE_CHECKING:
+    from slitherlink.model.field import Field
 
-from slitherlink.model.line import Line
-from slitherlink.model.line_state import LineState
-from slitherlink.model.point import Point
-
-
-def filterLineByState(iter: Iterable[Line], state: LineState):
-    for line in iter:
-        if line.state == state:
-            yield line
+    from slitherlink.model.line import Line
+    from slitherlink.model.line_state import LineState
+    from slitherlink.model.point import Point
 
 
-def filterLineByPoint(iter: Iterable[Line], point: Point):
-    for line in iter:
-        if point in line.points:
-            yield line
+def filterLineByState(iter: Iterable['Line'], state: 'LineState'):
+    return filter(lambda x: x.state == state, iter)
 
 
-def filterFieldByLine(iter: Iterable[Field], line: Line):
-    for field in iter:
-        if line in field.linelist:
-            yield field
+def filterLineByPoint(iter: Iterable['Line'], point: 'Point'):
+    return filter(lambda x: point in x.points, iter)
+
+
+def filterFieldByLine(iter: Iterable['Field'], line: 'Line'):
+    return filter(lambda x: line in x.linelist, iter)

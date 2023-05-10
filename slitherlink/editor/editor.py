@@ -1,3 +1,5 @@
+import collections
+import copy
 import tkinter
 from slitherlink import solver
 from slitherlink.gui.field import FieldGui
@@ -5,6 +7,7 @@ from slitherlink.gui.field import FieldGui
 from slitherlink.gui.gui_options import GUIOptions
 from slitherlink.gui.line import LineGui
 from slitherlink.model.line_state import LineState
+from slitherlink.util.update import setFieldLabel
 from ..gui.slitherlink import SlitherlinkGui
 from PIL import ImageTk
 
@@ -17,6 +20,7 @@ class EditorGui():
                  images: dict[str, ImageTk.PhotoImage],
                  screen: tkinter.Canvas | tkinter.Toplevel) -> None:
         self.slitherlink = slitherlink
+        self.undoStack: collections.deque[SlitherlinkGui] = collections.deque()
         self.images = images
         self.screen = screen
         size = self.slitherlink.getSize()
@@ -31,11 +35,19 @@ class EditorGui():
                                      height=size[1][1] - size[0][1] +
                                      2 * GUIOptions.MARGIN,
                                      bg=GUIOptions.BACKGROUND_COLOR)
-        self.canvas.pack()
+        self.canvas.grid(column=0, row=0, sticky="nsew")
+        tkinter.Button(self.screen, text="Back",
+                       command=self.undo).grid(column=0, row=1)
         self.canvas.focus_set()
         self.screen.bind("<Button-1>", self.onLeftClick)
         for i in range(10):
-            self.canvas.bind(f"<KeyPress-{i}>", self.onNumberInputClosure(i))
+            self.screen.bind(f"<KeyPress-{i}>", self.onNumberInputClosure(i))
+        self.canvas.bind("<KeyPress-BackSpace>", self.undo)
+
+    def undo(self, _: tkinter.Event | None = None):
+        if len(self.undoStack) > 0:
+            self.slitherlink = self.undoStack.pop()
+            self.draw()
 
     def getPositionInsideCanvas(self, pos: tuple[int, int]) -> tuple[int, int]:
         return (pos[0] - self.canvas.winfo_rootx(),
@@ -66,16 +78,20 @@ class EditorGui():
 
     def onNumberInputClosure(self, number: int):
         def onNumberInput(_: tkinter.Event):
-            if self.selected is not None:
-                self.selected.updateLabel(number)
-                solver.solve(self.slitherlink, self.selected)
-            else:
-                clickPos = (self.screen.winfo_pointerx(),
-                            self.screen.winfo_pointery())
-                pos = self.getPositionInsideCanvas(clickPos)
-                for field in self.slitherlink.fieldlist:
-                    if field.isClicked(pos):
-                        field.updateLabel(number)
-                        solver.solve(self.slitherlink, field)
+            self.undoStack.append(copy.deepcopy(self.slitherlink))
+            try:
+                if self.selected is not None:
+                    setFieldLabel(self.selected, number, self.slitherlink)
+                    solver.solve(self.slitherlink, self.selected)
+                else:
+                    clickPos = (self.screen.winfo_pointerx(),
+                                self.screen.winfo_pointery())
+                    pos = self.getPositionInsideCanvas(clickPos)
+                    for field in self.slitherlink.fieldlist:
+                        if field.isClicked(pos):
+                            setFieldLabel(field, number, self.slitherlink)
+                            solver.solve(self.slitherlink, field)
+            except solver.UnsolvableError:
+                print("Number not allowed")
             self.draw()
         return onNumberInput

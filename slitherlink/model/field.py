@@ -1,5 +1,4 @@
-from slitherlink.model.error import UnsolvableError
-from slitherlink.util.update import updateLineState
+from slitherlink.util.filter import filterLineByState
 from .point import Point
 from .line import Line
 from .line_state import LineState
@@ -14,57 +13,15 @@ class Field():
     def isSolved(self) -> bool:
         if self.number is None:
             return True
-        numSetLines = sum(1 for line in self.linelist if
-                          line.state == LineState.SET)
+        numSetLines = sum(1 for _ in filterLineByState(
+            self.linelist, LineState.SET))
         return numSetLines == self.number
 
-    def isSolvable(self) -> bool:
+    def isSolvable(self):
         if self.number is None:
             return True
-        numSetLines = sum(
-            1 for line in self.linelist if line.state == LineState.SET)
-        numUnknownLines = sum(
-            1 for line in self.linelist if line.state == LineState.UNKNOWN)
+        numSetLines = sum(1 for _ in filterLineByState(
+            self.linelist, LineState.SET))
+        numUnknownLines = sum(1 for _ in filterLineByState(
+            self.linelist, LineState.UNKNOWN))
         return numSetLines + numUnknownLines >= self.number
-
-    def updateLabel(self, label: int) -> None:
-        numSetLines = sum(1 for line in self.linelist if
-                          line.state == LineState.SET)
-        numUnknownLines = sum(1 for line in self.linelist if
-                              line.state == LineState.UNKNOWN)
-        if numSetLines > label:
-            raise ValueError("Label is too low")
-        if numSetLines + numUnknownLines < label:
-            raise ValueError("Label is too high")
-        if self.number is not None:
-            raise RuntimeError("Label is already set")
-        try:
-            self.number = label
-            self.update()
-        except UnsolvableError as e:
-            self.number = None
-            raise e
-
-    def update(self) -> list[Line]:
-        updated = []
-        if self.number is None:
-            return updated  # No information to be gained
-        numSetLines = sum(1 for line in self.linelist if
-                          line.state == LineState.SET)
-        numUnknownLines = sum(1 for line in self.linelist if
-                              line.state == LineState.UNKNOWN)
-        if numSetLines + numUnknownLines < self.number:
-            raise UnsolvableError("Not enough Lines can be set on field" +
-                                  f'{self}')
-        if numSetLines > self.number:
-            raise UnsolvableError("To much Lines set on field" +
-                                  f'{self}')
-        if numSetLines == self.number:
-            for line in self.linelist:
-                if line.state == LineState.UNKNOWN:
-                    updated += updateLineState(line, LineState.UNSET, slitherlink)
-        elif numSetLines + numUnknownLines == self.number:
-            for line in self.linelist:
-                if line.state == LineState.UNKNOWN:
-                updated += updateLineState(line, LineState.SET, slitherlink)
-        return updated
