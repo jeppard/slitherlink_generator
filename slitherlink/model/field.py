@@ -58,7 +58,10 @@ class Field():
                               line.state == LineState.UNKNOWN)
         if numSetLines + numUnknownLines < self.number:
             raise UnsolvableException("Not enough Lines can be set on field" +
-                                      f'{self.pointlist}')
+                                      f'{self}')
+        if numSetLines > self.number:
+            raise UnsolvableException("To much Lines set on field" +
+                                      f'{self}')
         if numSetLines == self.number:
             for line in self.linelist:
                 if line.state == LineState.UNKNOWN:

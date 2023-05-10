@@ -7,6 +7,7 @@ from .line_state import LineState
 if TYPE_CHECKING:
     from .point import Point
     from .field import Field
+    from .slitherlink import Slitherlink
 
 
 class Line():

@@ -14,13 +14,6 @@ class Slitherlink():
         self.linelist = list(
             set([line for field in fieldlist for line in field.linelist]))
 
-    def isSolvable(self) -> bool:
-        if solver.isSolved(self):
-            return True
-        if self.hasOnePath():
-            return False
-        return True
-
     def hasOnePath(self) -> bool:
         graph: dict[Point, list[Point]] = {}
         num_lines = 0
