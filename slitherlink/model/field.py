@@ -1,4 +1,5 @@
 from slitherlink.model.error import UnsolvableError
+from slitherlink.util.update import updateLineState
 from .point import Point
 from .line import Line
 from .line_state import LineState
@@ -9,8 +10,6 @@ class Field():
         self.pointlist = pointlist
         self.linelist = linelist
         self.number: int | None = None
-        for line in linelist:
-            line.registerField(self)
 
     def isSolved(self) -> bool:
         if self.number is None:
@@ -52,8 +51,6 @@ class Field():
             return updated  # No information to be gained
         numSetLines = sum(1 for line in self.linelist if
                           line.state == LineState.SET)
-        numUnsetLines = sum(1 for line in self.linelist if
-                            line.state == LineState.UNSET)
         numUnknownLines = sum(1 for line in self.linelist if
                               line.state == LineState.UNKNOWN)
         if numSetLines + numUnknownLines < self.number:
@@ -65,9 +62,9 @@ class Field():
         if numSetLines == self.number:
             for line in self.linelist:
                 if line.state == LineState.UNKNOWN:
-                    updated += line.setState(LineState.UNSET)
+                    updated += updateLineState(line, LineState.UNSET, slitherlink)
         elif numSetLines + numUnknownLines == self.number:
             for line in self.linelist:
                 if line.state == LineState.UNKNOWN:
-                    updated += line.setState(LineState.SET)
+                updated += updateLineState(line, LineState.SET, slitherlink)
         return updated

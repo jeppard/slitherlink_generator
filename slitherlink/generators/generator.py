@@ -10,7 +10,7 @@ from ..gui.line import LineGui
 class SlitherlinkGenerator():
     @staticmethod
     def generate(form: SlitherlinkForm, size: tuple[int, int],
-                 outerForm: OuterForm = OuterForm.RECTANGLE) -> None:
+                 outerForm: OuterForm = OuterForm.RECTANGLE) -> SlitherlinkGui:
         match (form, outerForm):
             case SlitherlinkForm.SQUARE, _:
                 slitherlink = SlitherlinkGenerator.generate_square(size)
@@ -104,7 +104,7 @@ class SlitherlinkGenerator():
     def getHexagonPosition(x: int, y: int, offset=False) -> tuple[int, int]:
         return ((2*x + (y % 4 in [0, 3])) * GUIOptions.STEP +
                 GUIOptions.MARGIN - (offset * GUIOptions.STEP),
-                (y + y//2) * 0.5 * GUIOptions.STEP + GUIOptions.MARGIN)
+                ((y + y//2) * GUIOptions.STEP) // 2 + GUIOptions.MARGIN)
 
     @staticmethod
     def generate_hexagon_hexagon(sideLength: int) -> SlitherlinkGui:
@@ -143,7 +143,8 @@ class SlitherlinkGenerator():
                 horizontalLines[y+1][2*x + y % 2], verticalLines[y][x]
             ])
             for y in range(size[1])
-            for x in range((abs(sideLength-y-1)+(sideLength % 2 == 0))//2, size[0]-(abs(sideLength-y-1)+(sideLength % 2))//2)
+            for x in range((abs(sideLength-y-1)+(sideLength % 2 == 0))//2,
+                           size[0]-(abs(sideLength-y-1)+(sideLength % 2))//2)
         ]
         return SlitherlinkGui(fields)
 

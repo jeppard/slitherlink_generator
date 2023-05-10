@@ -15,7 +15,7 @@ class EditorGui():
     def __init__(self,
                  slitherlink: SlitherlinkGui,
                  images: dict[str, ImageTk.PhotoImage],
-                 screen: tkinter.Canvas) -> None:
+                 screen: tkinter.Canvas | tkinter.Toplevel) -> None:
         self.slitherlink = slitherlink
         self.images = images
         self.screen = screen

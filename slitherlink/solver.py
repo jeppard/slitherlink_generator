@@ -4,8 +4,9 @@ from slitherlink.model.error import StateError, UnsolvableError
 
 from slitherlink.model.line_state import LineState
 from typing import TYPE_CHECKING
+from slitherlink.model.point import Point
 
-from slitherlink.util.filter import filterLine
+from slitherlink.util.filter import filterLineByState, filterLineByPoint
 if TYPE_CHECKING:
     from slitherlink.model.field import Field
     from slitherlink.model.line import Line
@@ -29,55 +30,35 @@ def timeit(func):
 
 def isSolved(slitherlink: 'Slitherlink'):
     return all(field.isSolved() for field in slitherlink.fieldlist) and \
-        all(point.isSolved() for point in slitherlink.points) and \
+        all(sum(1 for line in filterLineByPoint(slitherlink.linelist, point)
+                if line.state == LineState.SET) in [0, 2]
+            for point in slitherlink.points) and \
         slitherlink.hasOnePath()
 
 
-def getAllEndLines(slitherlink: 'Slitherlink'):
-    """
-    This is a generator Function to yield all Lines that are next to a line
-    with is set, but has no connection
-
-    Args:
-        slitherlink (Slitherlink): slitherlink from with the lines should be
-        taken
-
-    Yields:
-        list[Line]: Yields 
-    """
-    for line in (line for point in slitherlink.points
-                 for line in point.lines
-                 if sum(1 for l in point.lines
-                        if l.state == LineState.SET) == 1 and
-                 line.state == LineState.UNKNOWN):
-        l = copy.deepcopy(line)
-        try:
-            l.setState(LineState.SET)
-        except UnsolvableError:
-            pass
-        else:
-            yield [l]
-        l = copy.deepcopy(line)
-        try:
-            l.setState(LineState.UNSET)
-        except UnsolvableError:
-            pass
-        else:
-            yield [l]
-
+def isPointSolvable(point: Point, slitherlink: 'Slitherlink'):
+    lines = [*filterLineByPoint(slitherlink.linelist, point)]
+    numSet = sum(1 for line in lines if line.state == LineState.SET)
+    if numSet > 2:
+        return False
+    numUnknown = sum(1 for line in lines if line.state == LineState.UNKNOWN)
+    return not (numSet == 1 and numUnknown == 0)
 
 # @timeit
+
+
 def isSolvable(slitherlink: 'Slitherlink'):
     def getConnected(line: 'Line', lines: set['Line'] | None = None):
         if lines is None:
             lines = set()
-        for l in filterLine(line.getNeighbors(), LineState.SET):
+        for l in filterLineByState(line.getNeighbors(), LineState.SET):
             if l not in lines:
                 lines.add(l)
                 lines.update(getConnected(l, lines))
         return lines
     if not (all(field.isSolvable() for field in slitherlink.fieldlist) and
-            all(point.isSolvable() for point in slitherlink.points)):
+            all(isPointSolvable(point, slitherlink)
+                for point in slitherlink.points)):
         return False
     if isSolved(slitherlink):
         return True
@@ -100,7 +81,7 @@ def isSolvable(slitherlink: 'Slitherlink'):
     return None
 
 
-def solve(slitherlink: 'Slitherlink', start: 'Field'):
+def solve(slitherlink: 'Slitherlink', start: 'Field'):  # Todo dont start at start
     lineQueue: deque[tuple[list[tuple['Line', LineState]], 'Line']] = deque(
         ([], line) for line in start.linelist
         if line.state == LineState.UNKNOWN)
@@ -129,7 +110,7 @@ def solve(slitherlink: 'Slitherlink', start: 'Field'):
             updated = currentLine.setState(LineState.UNSET)
             lineQueue.clear()
             lineQueue.extend(([], l) for line in updated
-                             for l in filterLine(
+                             for l in filterLineByState(
                 line.getNeighbors(), LineState.UNKNOWN))
 
         else:
@@ -147,7 +128,7 @@ def solve(slitherlink: 'Slitherlink', start: 'Field'):
                 updated = currentLine.setState(LineState.SET)
                 lineQueue.clear()
                 lineQueue.extend(([], l) for line in updated
-                                 for l in filterLine(
+                                 for l in filterLineByState(
                     line.getNeighbors(), LineState.UNKNOWN))
             else:
                 changedLines: list['Line'] = []
@@ -165,11 +146,11 @@ def solve(slitherlink: 'Slitherlink', start: 'Field'):
                     if len(prevLines) + 1 >= SolverOptions.MAX_DEPTH:
                         continue
                     lineQueue.extend((prevLines + [(currentLine, state)], line)
-                                     for line in filterLine(
+                                     for line in filterLineByState(
                         currentLine.getNeighbors(), LineState.UNKNOWN)
                         for state in (LineState.SET, LineState.UNSET))
                 else:
                     lineQueue.clear()
                     lineQueue.extend(([], l) for line in changedLines
-                                     for l in filterLine(line.getNeighbors(),
-                                                         LineState.UNKNOWN))
+                                     for l in filterLineByState(line.getNeighbors(),
+                                                                LineState.UNKNOWN))
