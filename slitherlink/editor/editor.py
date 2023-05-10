@@ -7,6 +7,7 @@ from slitherlink.gui.field import FieldGui
 from slitherlink.gui.gui_options import GUIOptions
 from slitherlink.gui.line import LineGui
 from slitherlink.model.line_state import LineState
+from slitherlink.util.debug import profile
 from slitherlink.util.update import setFieldLabel
 from ..gui.slitherlink import SlitherlinkGui
 from PIL import ImageTk
@@ -77,6 +78,7 @@ class EditorGui():
                 return
 
     def onNumberInputClosure(self, number: int):
+        @profile
         def onNumberInput(_: tkinter.Event):
             self.undoStack.append(copy.deepcopy(self.slitherlink))
             try:
@@ -93,5 +95,6 @@ class EditorGui():
                             solver.solve(self.slitherlink, field)
             except solver.UnsolvableError:
                 print("Number not allowed")
+                self.slitherlink = self.undoStack.pop()
             self.draw()
         return onNumberInput

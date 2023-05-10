@@ -19,10 +19,16 @@ def setLineState(line: 'Line', state: LineState,
     line.state = state
     if state == LineState.UNKNOWN:
         return updated
-    for point in line.points:
-        updated += updatePoint(point, slitherlink)
-    for field in filterFieldByLine(slitherlink.fieldlist, line):
-        updated += updateField(field, slitherlink)
+    try:
+        for point in line.points:
+            updated += updatePoint(point, slitherlink)
+        for field in filterFieldByLine(slitherlink.fieldlist, line):
+            updated += updateField(field, slitherlink)
+    except UnsolvableError as e:
+        for l in updated:
+            l.state = LineState.UNKNOWN
+        line.state = LineState.UNKNOWN
+        raise e
     return updated
 
 

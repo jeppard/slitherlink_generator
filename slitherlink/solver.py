@@ -4,9 +4,10 @@ from slitherlink.model.error import UnsolvableError
 
 from slitherlink.model.line_state import LineState
 from typing import TYPE_CHECKING
+from slitherlink.util.debug import timeit
 
 from slitherlink.util.filter import filterLineByState, filterLineByPoint
-from slitherlink.util.generator import getLineNeighbors
+from slitherlink.util.generator import getLineNeighbors, getUnknownPatches
 if TYPE_CHECKING:
     from slitherlink.model.point import Point
     from slitherlink.model.field import Field
@@ -16,17 +17,6 @@ if TYPE_CHECKING:
 
 class SolverOptions:
     MAX_DEPTH = 1
-
-
-def timeit(func):
-    import time
-
-    def timeit_wrap(*args, **kwargs):
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        print(f'{func.__name__} took {time.perf_counter()-start} seconds')
-        return result
-    return timeit_wrap
 
 
 def isSolved(slitherlink: 'Slitherlink'):
@@ -51,13 +41,12 @@ def isPointSolvable(point: 'Point', slitherlink: 'Slitherlink'):
     numUnknown = sum(1 for line in lines if line.state == LineState.UNKNOWN)
     return not (numSet == 1 and numUnknown == 0)
 
-# @timeit
 
-
+@timeit
 def isSolvable(slitherlink: 'Slitherlink'):
     def getConnected(line: 'Line', lines: set['Line'] | None = None):
         if lines is None:
-            lines = set()
+            lines = set([line])
         for x in filterLineByState(getLineNeighbors(line, slitherlink),
                                    LineState.SET):
             if x not in lines:
@@ -82,10 +71,14 @@ def isSolvable(slitherlink: 'Slitherlink'):
         paths.append(connected)
         seen.update(connected)
     for path in paths:
-        # ToDo detect Cycle
-        if all(isPointSolved for l in path for p in l.points):
+        if all(isPointSolved(p, slitherlink) for l in path for p in l.points):
             return False
-    # TODO check if paths are connectable
+    patches = [*getUnknownPatches(slitherlink)]
+    for patch in patches:
+        if sum(1 for point in patch if sum(1 for _ in filterLineByState(
+                filterLineByPoint(slitherlink.linelist, point),
+                LineState.SET)) == 1) % 2 == 1:
+            return False
     return None
 
 
@@ -150,6 +143,7 @@ def solve(slitherlink: 'Slitherlink', start: 'Field'):  # Todo dont start at sta
                     stateSet = setLines[setLines.index(line)].state
                     if line.state != stateSet:
                         setLineState(line, LineState.UNKNOWN, slitherlink)
+                        continue
                     # Line Changed
                     changedLines.append(line)
 
