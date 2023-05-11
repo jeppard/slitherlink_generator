@@ -77,13 +77,13 @@ def setLineState(line: 'Line', state: LineState,
             updated += updatePoint(point, slitherlink)
         for field in filterFieldByLine(slitherlink.fieldlist, line):
             updated += updateField(field, slitherlink)
+        if state == LineState.SET:
+            addLineToPath(line, slitherlink)
     except UnsolvableError as e:
         for l in updated:
             setLineState(l, LineState.UNKNOWN, slitherlink)
         setLineState(line, LineState.UNKNOWN, slitherlink)
         raise e
-    if state == LineState.SET:
-        addLineToPath(line, slitherlink)
     return updated
 
 

@@ -1,4 +1,5 @@
 import copy
+from functools import total_ordering
 from typing import TYPE_CHECKING
 
 from slitherlink.model.error import StateError, UnsolvableError
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
     from .slitherlink import Slitherlink
 
 
+@total_ordering
 class Line():
     def __init__(self, points: tuple['Point', 'Point']) -> None:
         if points[0] > points[1]:
@@ -23,8 +25,13 @@ class Line():
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Line):
-            return NotImplemented
+            raise NotImplementedError
         return self.points == other.points
+
+    def __lt__(self, other):
+        if not isinstance(other, Line):
+            raise NotImplementedError
+        return self.points < other.points
 
     def __repr__(self) -> str:
         return f'Line: {self.points} is {self.state}'

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class SolverOptions:
-    MAX_DEPTH = 1
+    MAX_DEPTH = 2  # TODO Max_Depth > 1 is Broken
 
 
 def isSolved(slitherlink: 'Slitherlink'):
@@ -64,84 +64,81 @@ def isSolvable(slitherlink: 'Slitherlink'):
 def solve(slitherlink: 'Slitherlink'):  # Todo dont start at start
     from slitherlink.util.update import setLineState
 
+    def tryAllCombinations(lines: list['Line']) -> list['Line']:
+        if len(lines) == 0:
+            return []
+        updated = []
+        currentLines = []
+        try:
+            currentLines = setLineState(
+                lines[0], LineState.SET, slitherlink)
+            currentLines += tryAllCombinations(lines[1:])
+            if isSolvable(slitherlink) is False:
+                raise UnsolvableError("Connectivity Constraint failed")
+        except UnsolvableError:
+            for line in currentLines:
+                setLineState(line, LineState.UNKNOWN, slitherlink)
+            return setLineState(lines[0], LineState.UNSET, slitherlink)
+        else:
+            unsetLines = []
+            setLines = copy.deepcopy(currentLines)
+            for line in currentLines:
+                setLineState(line, LineState.UNKNOWN, slitherlink)
+            try:
+                unsetLines = setLineState(
+                    lines[0], LineState.UNSET, slitherlink)
+                unsetLines += tryAllCombinations(lines[1:])
+                if isSolvable(slitherlink) is False:
+                    raise UnsolvableError("Connectivity Constraint failed")
+            except UnsolvableError:
+                for line in unsetLines:
+                    setLineState(line, LineState.UNKNOWN, slitherlink)
+                return setLineState(lines[0], LineState.SET, slitherlink)
+            else:
+                idxSet, idxUnset = 0, 0
+                setLines.sort()
+                tmp = copy.deepcopy(unsetLines)
+                for line in unsetLines:
+                    setLineState(line, LineState.UNKNOWN, slitherlink)
+                unsetLines = tmp
+                unsetLines.sort()
+                while idxSet < len(setLines) and idxUnset < len(unsetLines):
+                    if setLines[idxSet] < unsetLines[idxUnset]:
+                        idxSet += 1
+                        continue
+                    if setLines[idxSet] > unsetLines[idxUnset]:
+                        idxUnset += 1
+                        continue
+                    if setLines[idxSet].state == unsetLines[idxUnset].state:
+                        idx = slitherlink.linelist.index(setLines[idxSet])
+                        line = slitherlink.linelist[idx]
+                        updated.append(line)
+                        updated.extend(setLineState(
+                            line, setLines[idxSet].state, slitherlink))
+                    idxSet += 1
+                    idxUnset += 1
+        return updated
+
     def initLineQueue():
         lineQueue.clear()
         for path in slitherlink.paths:
-            lineQueue.extend(([], line) for line in filterLineByState(
+            lineQueue.extend([l] for l in filterLineByState(
                 chain(getLineNeighbors(path[0], slitherlink),
                       getLineNeighbors(path[-1], slitherlink)),
                 LineState.UNKNOWN))
         for field in slitherlink.fieldlist:
             if not field.isSolved():
-                lineQueue.extend(([], line) for line in filterLineByState(
+                lineQueue.extend([l] for l in filterLineByState(
                     field.linelist, LineState.UNKNOWN))
-    lineQueue: deque[tuple[list[tuple['Line', LineState]], 'Line']] = deque()
+    lineQueue: deque[list['Line']] = deque()
     initLineQueue()
     while lineQueue:
-        prevLines, currentLine = lineQueue.popleft()
-        updated = []
-        try:
-            if any(line.state != LineState.UNKNOWN
-                   for line, _ in prevLines) or \
-                    currentLine.state != LineState.UNKNOWN:
-                continue
-            for line, state in prevLines:
-                updated += setLineState(line, state, slitherlink)
-        except UnsolvableError:
-            for line in updated:
-                line.setState(LineState.UNKNOWN)
-            continue
-        if currentLine.state != LineState.UNKNOWN:
-            continue
-        result: Iterable['Line'] = []
-        try:
-            result = setLineState(currentLine, LineState.SET, slitherlink)
-            if isSolvable(slitherlink) is False:
-                raise UnsolvableError(
-                    "Slitherlink contectivity Constraint")
-        except UnsolvableError as _:
-            for line in result:
-                setLineState(line, LineState.UNKNOWN, slitherlink)
-            updated = setLineState(currentLine, LineState.UNSET, slitherlink)
-            initLineQueue()
-
+        lines = lineQueue.popleft()
+        updated = tryAllCombinations(lines)
+        if len(updated) == 0:
+            if len(lines) < SolverOptions.MAX_DEPTH:
+                lineQueue.extend(lines + [line]
+                                 for line in getLineNeighbors(lines[-1],
+                                                              slitherlink))
         else:
-            unsetLines: Iterable['Line'] = []
-            try:
-                setLines = copy.deepcopy(result)
-                for line in result:
-                    setLineState(line, LineState.UNKNOWN, slitherlink)
-                unsetLines = setLineState(currentLine, LineState.UNSET,
-                                          slitherlink)
-                if isSolvable(slitherlink) is False:
-                    raise UnsolvableError(
-                        "Slitherlink contectivity Constraint")
-            except UnsolvableError as _:
-                for line in unsetLines:
-                    setLineState(line, LineState.UNKNOWN, slitherlink)
-                updated = setLineState(currentLine, LineState.SET, slitherlink)
-                initLineQueue()
-            else:
-                changedLines: list['Line'] = []
-                for line in unsetLines:
-                    if line not in setLines:
-                        setLineState(line, LineState.UNKNOWN, slitherlink)
-                        continue
-                    stateSet = setLines[setLines.index(line)].state
-                    if line.state != stateSet:
-                        setLineState(line, LineState.UNKNOWN, slitherlink)
-                        continue
-                    # Line Changed
-                    changedLines.append(line)
-
-                if len(changedLines) == 0:
-                    if len(prevLines) + 1 >= SolverOptions.MAX_DEPTH:
-                        continue
-                    lineQueue.extend((prevLines + [(currentLine, state)], line)
-                                     for line in filterLineByState(
-                        getLineNeighbors(currentLine, slitherlink),
-                        LineState.UNKNOWN)
-                        for state in (LineState.SET, LineState.UNSET)
-                    )
-                else:
-                    initLineQueue()
+            initLineQueue()
