@@ -84,7 +84,7 @@ class EditorGui():
             try:
                 if self.selected is not None:
                     setFieldLabel(self.selected, number, self.slitherlink)
-                    solver.solve(self.slitherlink, self.selected)
+                    solver.solve(self.slitherlink)
                 else:
                     clickPos = (self.screen.winfo_pointerx(),
                                 self.screen.winfo_pointery())
@@ -92,8 +92,8 @@ class EditorGui():
                     for field in self.slitherlink.fieldlist:
                         if field.isClicked(pos):
                             setFieldLabel(field, number, self.slitherlink)
-                            solver.solve(self.slitherlink, field)
-            except solver.UnsolvableError:
+                            solver.solve(self.slitherlink)
+            except solver.UnsolvableError as _:
                 print("Number not allowed")
                 self.slitherlink = self.undoStack.pop()
             self.draw()

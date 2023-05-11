@@ -1,4 +1,5 @@
 
+from collections import deque
 from slitherlink.model.error import UnsolvableError
 from slitherlink.solver import isSolvable
 from slitherlink.util.filter import filterFieldByLine, \
@@ -13,9 +14,61 @@ if TYPE_CHECKING:
     from slitherlink.model.point import Point
 
 
+def removeLineFromPath(line: 'Line', slitherlink: 'Slitherlink'):
+    paths = list(filter(lambda path: line in path, slitherlink.paths))
+    if len(paths) > 2:
+        raise RuntimeError("Line in multiple Paths")
+    if len(paths) == 0:
+        return
+    path = paths[0]
+    idx = path.index(line)
+    if idx == 0:
+        path.popleft()
+    else:
+        slitherlink.paths.append(deque(
+            path.popleft() for _ in range(idx)
+        ))
+        path.popleft()
+    if len(path) == 0:
+        slitherlink.paths.remove(path)
+
+
+def addLineToPath(line: 'Line', slitherlink: 'Slitherlink'):
+    paths = list(filter(lambda path: any(point in line.points
+                                         for l in path
+                                         for point in l.points),
+                        slitherlink.paths))
+    if len(paths) == 0:
+        slitherlink.paths.append(deque((line,)))
+    if len(paths) == 1:
+        if any(point in line.points for point in paths[0][0].points):
+            paths[0].appendleft(line)
+        elif any(point in line.points for point in paths[0][-1].points):
+            paths[0].append(line)
+        else:
+            raise RuntimeError("Line in middle of Path")
+    if len(paths) == 2:
+        if any(point in line.points for point in paths[0][0].points):
+            paths[0].appendleft(line)
+            if any(point in line.points for point in paths[1][0].points):
+                paths[0].extendleft(l for l in paths[1])
+            else:
+                paths[0].extendleft(l for l in reversed(paths[1]))
+        else:
+            paths[0].append(line)
+            if any(point in line.points for point in paths[1][0].points):
+                paths[0].extend(l for l in paths[1])
+            else:
+                paths[0].extend(l for l in reversed(paths[1]))
+        slitherlink.paths.remove(paths[1])
+
+
 def setLineState(line: 'Line', state: LineState,
                  slitherlink: 'Slitherlink') -> list['Line']:
     updated: list['Line'] = [line]
+    if line.state == LineState.SET and state != LineState.SET:
+        removeLineFromPath(line, slitherlink)
+
     line.state = state
     if state == LineState.UNKNOWN:
         return updated
@@ -26,9 +79,11 @@ def setLineState(line: 'Line', state: LineState,
             updated += updateField(field, slitherlink)
     except UnsolvableError as e:
         for l in updated:
-            l.state = LineState.UNKNOWN
-        line.state = LineState.UNKNOWN
+            setLineState(l, LineState.UNKNOWN, slitherlink)
+        setLineState(line, LineState.UNKNOWN, slitherlink)
         raise e
+    if state == LineState.SET:
+        addLineToPath(line, slitherlink)
     return updated
 
 
@@ -52,7 +107,7 @@ def setFieldLabel(field: 'Field', label: int, slitherlink: 'Slitherlink'):
     except UnsolvableError as e:
         field.number = None
         for line in updated:
-            line.state = LineState.UNKNOWN
+            setLineState(line, LineState.UNKNOWN, slitherlink)
         raise e
 
 
@@ -96,9 +151,11 @@ def updateField(field: 'Field', slitherlink: 'Slitherlink') -> list['Line']:
     if numSet > field.number:
         raise UnsolvableError(f"To much Lines set on field {field}")
     if numSet == field.number:
-        for line in filterLineByState(field.linelist, LineState.UNKNOWN):
-            updated += setLineState(line, LineState.UNSET, slitherlink)
+        for line in field.linelist:
+            if line.state == LineState.UNKNOWN:
+                updated += setLineState(line, LineState.UNSET, slitherlink)
     elif numSet + numUnknown == field.number:
-        for line in filterLineByState(field.linelist, LineState.UNKNOWN):
-            updated += setLineState(line, LineState.SET, slitherlink)
+        for line in field.linelist:
+            if line.state == LineState.UNKNOWN:
+                updated += setLineState(line, LineState.SET, slitherlink)
     return updated

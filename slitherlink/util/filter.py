@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 def filterLineByState(iter: Iterable['Line'], state: 'LineState'):
-    return filter(lambda x: x.state == state, iter)
+    yield from filter(lambda x: x.state == state, iter)
 
 
 def filterLineByPoint(iter: Iterable['Line'], point: 'Point'):

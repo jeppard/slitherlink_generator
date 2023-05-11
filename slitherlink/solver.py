@@ -1,9 +1,10 @@
 from collections import deque
 import copy
+from itertools import chain
 from slitherlink.model.error import UnsolvableError
 
 from slitherlink.model.line_state import LineState
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 from slitherlink.util.debug import timeit
 
 from slitherlink.util.filter import filterLineByState, filterLineByPoint
@@ -44,33 +45,11 @@ def isPointSolvable(point: 'Point', slitherlink: 'Slitherlink'):
 
 @timeit
 def isSolvable(slitherlink: 'Slitherlink'):
-    def getConnected(line: 'Line', lines: set['Line'] | None = None):
-        if lines is None:
-            lines = set([line])
-        for x in filterLineByState(getLineNeighbors(line, slitherlink),
-                                   LineState.SET):
-            if x not in lines:
-                lines.add(x)
-                lines.update(getConnected(x, lines))
-        return lines
-    if not (all(field.isSolvable() for field in slitherlink.fieldlist) and
-            all(isPointSolvable(point, slitherlink)
-                for point in slitherlink.points)):
-        return False
     if isSolved(slitherlink):
         return True
     # TODO check if multiple loops are present
-    paths: list[set['Line']] = []
-    seen: set['Line'] = set()
-    for line in slitherlink.linelist:
-        if line in seen:
-            continue
-        if line.state != LineState.SET:
-            continue
-        connected = getConnected(line)
-        paths.append(connected)
-        seen.update(connected)
-    for path in paths:
+
+    for path in slitherlink.paths:
         if all(isPointSolved(p, slitherlink) for l in path for p in l.points):
             return False
     patches = [*getUnknownPatches(slitherlink)]
@@ -82,12 +61,22 @@ def isSolvable(slitherlink: 'Slitherlink'):
     return None
 
 
-def solve(slitherlink: 'Slitherlink', start: 'Field'):  # Todo dont start at start
+def solve(slitherlink: 'Slitherlink'):  # Todo dont start at start
     from slitherlink.util.update import setLineState
 
-    lineQueue: deque[tuple[list[tuple['Line', LineState]], 'Line']] = deque(
-        ([], line) for line in start.linelist
-        if line.state == LineState.UNKNOWN)
+    def initLineQueue():
+        lineQueue.clear()
+        for path in slitherlink.paths:
+            lineQueue.extend(([], line) for line in filterLineByState(
+                chain(getLineNeighbors(path[0], slitherlink),
+                      getLineNeighbors(path[-1], slitherlink)),
+                LineState.UNKNOWN))
+        for field in slitherlink.fieldlist:
+            if not field.isSolved():
+                lineQueue.extend(([], line) for line in filterLineByState(
+                    field.linelist, LineState.UNKNOWN))
+    lineQueue: deque[tuple[list[tuple['Line', LineState]], 'Line']] = deque()
+    initLineQueue()
     while lineQueue:
         prevLines, currentLine = lineQueue.popleft()
         updated = []
@@ -104,19 +93,20 @@ def solve(slitherlink: 'Slitherlink', start: 'Field'):  # Todo dont start at sta
             continue
         if currentLine.state != LineState.UNKNOWN:
             continue
+        result: Iterable['Line'] = []
         try:
             result = setLineState(currentLine, LineState.SET, slitherlink)
             if isSolvable(slitherlink) is False:
                 raise UnsolvableError(
                     "Slitherlink contectivity Constraint")
         except UnsolvableError as _:
+            for line in result:
+                setLineState(line, LineState.UNKNOWN, slitherlink)
             updated = setLineState(currentLine, LineState.UNSET, slitherlink)
-            lineQueue.clear()
-            lineQueue.extend(([], l) for line in updated
-                             for l in filterLineByState(
-                getLineNeighbors(line, slitherlink), LineState.UNKNOWN))
+            initLineQueue()
 
         else:
+            unsetLines: Iterable['Line'] = []
             try:
                 setLines = copy.deepcopy(result)
                 for line in result:
@@ -124,16 +114,13 @@ def solve(slitherlink: 'Slitherlink', start: 'Field'):  # Todo dont start at sta
                 unsetLines = setLineState(currentLine, LineState.UNSET,
                                           slitherlink)
                 if isSolvable(slitherlink) is False:
-                    for line in unsetLines:
-                        setLineState(line, LineState.UNKNOWN, slitherlink)
                     raise UnsolvableError(
                         "Slitherlink contectivity Constraint")
             except UnsolvableError as _:
+                for line in unsetLines:
+                    setLineState(line, LineState.UNKNOWN, slitherlink)
                 updated = setLineState(currentLine, LineState.SET, slitherlink)
-                lineQueue.clear()
-                lineQueue.extend(([], l) for line in updated
-                                 for l in filterLineByState(
-                    getLineNeighbors(line, slitherlink), LineState.UNKNOWN))
+                initLineQueue()
             else:
                 changedLines: list['Line'] = []
                 for line in unsetLines:
@@ -157,9 +144,4 @@ def solve(slitherlink: 'Slitherlink', start: 'Field'):  # Todo dont start at sta
                         for state in (LineState.SET, LineState.UNSET)
                     )
                 else:
-                    lineQueue.clear()
-                    lineQueue.extend(([], l) for line in changedLines
-                                     for l in filterLineByState(
-                        getLineNeighbors(line, slitherlink),
-                        LineState.UNKNOWN)
-                    )
+                    initLineQueue()
