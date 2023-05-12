@@ -2,9 +2,11 @@ import tkinter
 
 from slitherlink.gui.gui_options import GUIOptions
 from slitherlink.model.line_state import LineState
+from slitherlink.util.dashed_image_draw import DashedImageDraw
 from ..model.line import Line
 from .point import PointGui
 import shapely.geometry
+from PIL import ImageDraw
 
 
 class LineGui(Line):
@@ -47,3 +49,25 @@ class LineGui(Line):
 
     def isClicked(self, clickPos: tuple[int, int]) -> bool:
         return self.bbox.contains(shapely.geometry.Point(clickPos))
+
+    def drawImage(self, drawable: DashedImageDraw):
+        match (self.state):
+            case LineState.UNKNOWN:
+                drawable.dashed_line((self.points[0].position,
+                                      self.points[1].position),
+                                     fill=GUIOptions.LINE_ACTIVE_COLOR,
+                                     dash=GUIOptions.LINE_DASH,
+                                     width=GUIOptions.LINE_WIDTH)
+            case LineState.SET:
+                drawable.line((self.points[0].position,
+                               self.points[1].position),
+                              fill=GUIOptions.LINE_ACTIVE_COLOR,
+                              width=GUIOptions.LINE_WIDTH)
+            case LineState.UNSET:
+                drawable.dashed_line((self.points[0].position,
+                                      self.points[1].position),
+                                     fill=GUIOptions.LINE_INACTIVE_COLOR,
+                                     dash=GUIOptions.LINE_DASH,
+                                     width=GUIOptions.LINE_WIDTH)
+            case _:
+                raise ValueError("Unknown LineState")
