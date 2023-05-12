@@ -46,6 +46,7 @@ def addLineToPath(line: 'Line', slitherlink: 'Slitherlink'):
         elif any(point in line.points for point in paths[0][-1].points):
             paths[0].append(line)
         else:
+            print(slitherlink.paths)
             raise RuntimeError("Line in middle of Path")
     if len(paths) == 2:
         if any(point in line.points for point in paths[0][0].points):

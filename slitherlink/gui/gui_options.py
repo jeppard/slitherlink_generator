@@ -7,6 +7,8 @@ class GUIOptions:
     POINT_RADIUS = 3
     POINT_COLOR = "black"
     FONT = "Arial 12"
+    FONT_TTF = "font/arial.ttf"
+    FONT_TTF_SIZE = 12
     MENU_FONT = 'Arial 28 bold'
     FONT_COLOR = "black"
     BACKGROUND_COLOR = "white"

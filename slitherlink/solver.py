@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class SolverOptions:
-    MAX_DEPTH = 2  # TODO Max_Depth > 1 is Broken
+    MAX_DEPTH = 1
 
 
 def isSolved(slitherlink: 'Slitherlink'):
@@ -49,6 +49,7 @@ def isSolvable(slitherlink: 'Slitherlink'):
         return True
     # TODO check if multiple loops are present
 
+    seenPoints: set['Point'] = set()
     for path in slitherlink.paths:
         if all(isPointSolved(p, slitherlink) for l in path for p in l.points):
             return False
@@ -66,6 +67,8 @@ def solve(slitherlink: 'Slitherlink'):  # Todo dont start at start
 
     def tryAllCombinations(lines: list['Line']) -> list['Line']:
         if len(lines) == 0:
+            return []
+        if any(line.state != LineState.UNKNOWN for line in lines):
             return []
         updated = []
         currentLines = []
