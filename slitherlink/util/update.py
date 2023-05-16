@@ -1,12 +1,16 @@
 
 from collections import deque
+import heapq
 from slitherlink.model.error import UnsolvableError
 from slitherlink.solver import isSolvable
+from slitherlink.util.astar import isConnected
 from slitherlink.util.filter import filterFieldByLine, \
     filterLineByPoint, filterLineByState
 from slitherlink.model.line_state import LineState
 
 from typing import TYPE_CHECKING
+
+from slitherlink.util.generator import getConnectedPoints
 if TYPE_CHECKING:
     from slitherlink.model.slitherlink import Slitherlink
     from slitherlink.model.field import Field
@@ -64,6 +68,35 @@ def addLineToPath(line: 'Line', slitherlink: 'Slitherlink'):
         slitherlink.paths.remove(paths[1])
 
 
+def updatePatch(line: 'Line', slitherlink: 'Slitherlink'):
+    idx1, idx2 = -1, -1
+    for idx, patch in enumerate(slitherlink.patches):
+        if line.points[0] in patch:
+            idx1 = idx
+        if line.points[1] in patch:
+            idx2 = idx
+    if idx1 == -1 or idx2 == -1:
+        raise RuntimeError("Point was not found in any Patch")
+    if line.state == LineState.UNKNOWN:
+        if idx1 == idx2:
+            return
+        else:
+            slitherlink.patches[idx1].update(slitherlink.patches[idx2])
+            del slitherlink.patches[idx2]
+    else:
+        if idx1 != idx2:
+            return
+        else:
+            if isConnected(slitherlink, line.points[0], line.points[1]):
+                return
+            else:
+                del slitherlink.patches[idx1]
+                slitherlink.patches.append(
+                    getConnectedPoints(line.points[0], slitherlink))
+                slitherlink.patches.append(
+                    getConnectedPoints(line.points[1], slitherlink))
+
+
 def setLineState(line: 'Line', state: LineState,
                  slitherlink: 'Slitherlink') -> list['Line']:
     updated: list['Line'] = [line]
@@ -71,6 +104,7 @@ def setLineState(line: 'Line', state: LineState,
         removeLineFromPath(line, slitherlink)
 
     line.state = state
+    updatePatch(line, slitherlink)
     if state == LineState.UNKNOWN:
         return updated
     try:

@@ -63,6 +63,10 @@ class EditorGui():
                                                              ".png"),
                                                             ("JPG Image",
                                                              ".jpeg"),
+                                                            ("GIF Image",
+                                                             ".gif"),
+                                                            ("EPS File",
+                                                             ".eps"),
                                                             ("All Files",
                                                              ".*")
                                                         ],
@@ -77,19 +81,33 @@ class EditorGui():
             return
         filename, extension = filename[:idxExtension], \
             filename[idxExtension:]
-        solvedImg = Image.new("RGB", self.canvasSize,
-                              GUIOptions.BACKGROUND_COLOR)
-        solvedDraw = DashedImageDraw(solvedImg)
-        self.slitherlink.drawImage(solvedDraw)
-        solvedImg.save(filename+"_solved"+extension)
-        slitherlinkCopy = copy.deepcopy(self.slitherlink)
-        for line in slitherlinkCopy.linelist:
-            setLineState(line, LineState.UNKNOWN, slitherlinkCopy)
-        unsolvedImg = Image.new("RGB", self.canvasSize,
-                                GUIOptions.BACKGROUND_COLOR)
-        unsolveDraw = DashedImageDraw(unsolvedImg)
-        slitherlinkCopy.drawImage(unsolveDraw)
-        unsolvedImg.save(filename+extension)
+        if extension == ".eps":
+            self.canvas.configure(bg=GUIOptions.BACKGROUND_COLOR)
+            self.slitherlink.draw(self.canvas)
+            self.canvas.update()
+            self.canvas.postscript(
+                file=filename+"_solved"+extension, colormode="color")
+            slitherlinkCopy = copy.deepcopy(self.slitherlink)
+            for line in slitherlinkCopy.linelist:
+                setLineState(line, LineState.UNKNOWN, slitherlinkCopy)
+            slitherlinkCopy.draw(self.canvas)
+            self.canvas.update()
+            self.canvas.postscript(file=filename+extension, colormode="color")
+            self.draw()
+        else:
+            solvedImg = Image.new("RGB", self.canvasSize,
+                                  GUIOptions.BACKGROUND_COLOR)
+            solvedDraw = DashedImageDraw(solvedImg)
+            self.slitherlink.drawImage(solvedDraw)
+            solvedImg.save(filename+"_solved"+extension)
+            slitherlinkCopy = copy.deepcopy(self.slitherlink)
+            for line in slitherlinkCopy.linelist:
+                setLineState(line, LineState.UNKNOWN, slitherlinkCopy)
+            unsolvedImg = Image.new("RGB", self.canvasSize,
+                                    GUIOptions.BACKGROUND_COLOR)
+            unsolveDraw = DashedImageDraw(unsolvedImg)
+            slitherlinkCopy.drawImage(unsolveDraw)
+            unsolvedImg.save(filename+extension)
 
     def getPositionInsideCanvas(self, pos: tuple[int, int]) -> tuple[int, int]:
         return (pos[0] - self.canvas.winfo_rootx(),
@@ -119,7 +137,7 @@ class EditorGui():
                 return
 
     def onNumberInputClosure(self, number: int):
-        # @profile
+        @profile
         def onNumberInput(_: tkinter.Event):
             self.undoStack.append(copy.deepcopy(self.slitherlink))
             try:

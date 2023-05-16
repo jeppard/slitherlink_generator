@@ -9,6 +9,7 @@ from collections import deque
 
 class Slitherlink():
     paths: list[deque[Line]]
+    patches: list[set[Point]]
 
     def __init__(self, fieldlist: list[Field]) -> None:
         self.fieldlist = fieldlist
@@ -17,6 +18,7 @@ class Slitherlink():
         self.linelist = list(
             set([line for field in fieldlist for line in field.linelist]))
         self.paths = []
+        self.patches = [set(self.points)]
 
     def hasOnePath(self) -> bool:
         return len(self.paths) == 1

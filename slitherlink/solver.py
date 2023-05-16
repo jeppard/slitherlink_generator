@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Iterable
 from slitherlink.util.debug import timeit
 
 from slitherlink.util.filter import filterLineByState, filterLineByPoint
-from slitherlink.util.generator import getLineNeighbors, getUnknownPatches
+from slitherlink.util.generator import getLineNeighbors, getLinesByPoint, getUnknownPatches
 if TYPE_CHECKING:
     from slitherlink.model.point import Point
     from slitherlink.model.field import Field
@@ -56,7 +56,7 @@ def isSolvable(slitherlink: 'Slitherlink'):
     patches = [*getUnknownPatches(slitherlink)]
     for patch in patches:
         if sum(1 for point in patch if sum(1 for _ in filterLineByState(
-                filterLineByPoint(slitherlink.linelist, point),
+                getLinesByPoint(point, slitherlink),
                 LineState.SET)) == 1) % 2 == 1:
             return False
     return None
