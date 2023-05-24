@@ -64,11 +64,18 @@ class EditorGui():
             return
         filename, extension = filename[:idxExtension], \
             filename[idxExtension:]
-        solvedImg = Image.new("RGB", self.canvasSize,
-                              GUIOptions.BACKGROUND_COLOR)
-        solvedDraw = DashedImageDraw(solvedImg)
-        self.slitherlink.drawImage(solvedDraw)
-        solvedImg.save(filename+extension)
+        if extension == ".eps":
+            self.canvas.configure(bg=GUIOptions.BACKGROUND_COLOR)
+            self.slitherlink.draw(self.canvas)
+            self.canvas.update()
+            self.canvas.postscript(
+                file=filename+extension, colormode="color")
+        else:
+            solvedImg = Image.new("RGB", self.canvasSize,
+                                  GUIOptions.BACKGROUND_COLOR)
+            solvedDraw = DashedImageDraw(solvedImg)
+            self.slitherlink.drawImage(solvedDraw)
+            solvedImg.save(filename+extension)
 
     def getPositionInsideCanvas(self, pos: tuple[int, int]) -> tuple[int, int]:
         return (pos[0] - self.canvas.winfo_rootx(),
