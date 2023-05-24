@@ -99,6 +99,8 @@ def updatePatch(line: 'Line', slitherlink: 'Slitherlink'):
 
 def setLineState(line: 'Line', state: LineState,
                  slitherlink: 'Slitherlink') -> list['Line']:
+    if line.state == state:
+        return []
     updated: list['Line'] = [line]
     if line.state == LineState.SET and state != LineState.SET:
         removeLineFromPath(line, slitherlink)
