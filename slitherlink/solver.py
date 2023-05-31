@@ -43,7 +43,7 @@ def isPointSolvable(point: 'Point', slitherlink: 'Slitherlink'):
     return not (numSet == 1 and numUnknown == 0)
 
 
-@timeit
+# @timeit
 def isSolvable(slitherlink: 'Slitherlink'):
     if isSolved(slitherlink):
         return True

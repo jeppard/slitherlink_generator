@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 def removeLineFromPath(line: 'Line', slitherlink: 'Slitherlink'):
     paths = list(filter(lambda path: line in path, slitherlink.paths))
     if len(paths) > 2:
-        raise RuntimeError("Line in multiple Paths")
+        raise UnsolvableError("Line in multiple Paths")
     if len(paths) == 0:
         return
     path = paths[0]
@@ -51,7 +51,7 @@ def addLineToPath(line: 'Line', slitherlink: 'Slitherlink'):
             paths[0].append(line)
         else:
             print(slitherlink.paths)
-            raise RuntimeError("Line in middle of Path")
+            raise UnsolvableError("Line not connected to path")
     if len(paths) == 2:
         if any(point in line.points for point in paths[0][0].points):
             paths[0].appendleft(line)
@@ -76,7 +76,7 @@ def updatePatch(line: 'Line', slitherlink: 'Slitherlink'):
         if line.points[1] in patch:
             idx2 = idx
     if idx1 == -1 or idx2 == -1:
-        raise RuntimeError("Point was not found in any Patch")
+        raise UnsolvableError("Point was not found in any Patch")
     if line.state == LineState.UNKNOWN:
         if idx1 == idx2:
             return
