@@ -33,7 +33,7 @@ class LineGui(Line):
                 canvas.create_line(self.points[0].x, self.points[0].y,
                                    self.points[1].x, self.points[1].y,
                                    fill=GUIOptions.LINE_ACTIVE_COLOR,
-                                   width=GUIOptions.LINE_WIDTH)
+                                   width=GUIOptions.LINE_WIDTH*2)
             case LineState.UNSET:
                 canvas.create_line(self.points[0].x, self.points[0].y,
                                    self.points[1].x, self.points[1].y,

@@ -1,10 +1,10 @@
 
 class GUIOptions:
-    LINE_WIDTH = 3
+    LINE_WIDTH = 1
     LINE_BBOX_WIDTH = 2 * LINE_WIDTH
     STEP = 40
     MARGIN = 20
-    POINT_RADIUS = 3
+    POINT_RADIUS = 2
     POINT_COLOR = "black"
     FONT = "Arial 12"
     FONT_TTF = "font/arial.ttf"

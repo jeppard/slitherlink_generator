@@ -90,6 +90,7 @@ class EditorGui():
             slitherlinkCopy = copy.deepcopy(self.slitherlink)
             for line in slitherlinkCopy.linelist:
                 setLineState(line, LineState.UNKNOWN, slitherlinkCopy)
+            self.canvas.delete('all')
             slitherlinkCopy.draw(self.canvas)
             self.canvas.update()
             self.canvas.postscript(file=filename+extension, colormode="color")
