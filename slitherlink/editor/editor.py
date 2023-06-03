@@ -138,7 +138,7 @@ class EditorGui():
                 return
 
     def onNumberInputClosure(self, number: int):
-        # @profile
+        @profile
         def onNumberInput(_: tkinter.Event):
             self.undoStack.append(copy.deepcopy(self.slitherlink))
             try:

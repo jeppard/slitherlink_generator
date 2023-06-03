@@ -24,6 +24,13 @@ def isConnected(slitherlink: 'Slitherlink', start: 'Point', end: 'Point',
         point end (Point): end point allowedLineState (LineState, optional):
         Allowed LineState for Connections. Defaults to LineState.UNKNOWN.
     """
+    if start == end:
+        return True
+    if sum(1 for line in getLinesByPoint(start, slitherlink)
+           if line.state == LineState.UNKNOWN) == 0 or \
+            sum(1 for line in getLinesByPoint(end, slitherlink)
+                if line.state == LineState.UNKNOWN) == 0:
+        return False
     heap = [(distance(start, end), start)]
     visited = set()
     backwards = {start: 0.0}

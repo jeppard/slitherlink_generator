@@ -7,7 +7,7 @@ from slitherlink.model.line_state import LineState
 from typing import TYPE_CHECKING, Iterable
 from slitherlink.util.debug import timeit
 
-from slitherlink.util.filter import filterLineByState, filterLineByPoint
+from slitherlink.util.filter import filterLineByState
 from slitherlink.util.generator import getLineNeighbors, getLinesByPoint, getUnknownPatches
 if TYPE_CHECKING:
     from slitherlink.model.point import Point
@@ -22,7 +22,7 @@ class SolverOptions:
 
 def isSolved(slitherlink: 'Slitherlink'):
     return all(field.isSolved() for field in slitherlink.fieldlist) and \
-        all(sum(1 for line in filterLineByPoint(slitherlink.linelist, point)
+        all(sum(1 for line in getLinesByPoint(point, slitherlink)
                 if line.state == LineState.SET) in [0, 2]
             for point in slitherlink.points) and \
         slitherlink.hasOnePath()
@@ -30,12 +30,12 @@ def isSolved(slitherlink: 'Slitherlink'):
 
 def isPointSolved(point: 'Point', slitherlink: 'Slitherlink'):
     return sum(1 for line in filterLineByState(
-        filterLineByPoint(slitherlink.linelist, point),
+        getLinesByPoint(point, slitherlink),
         LineState.SET)) in [0, 2]
 
 
 def isPointSolvable(point: 'Point', slitherlink: 'Slitherlink'):
-    lines = [*filterLineByPoint(slitherlink.linelist, point)]
+    lines = getLinesByPoint(point, slitherlink)
     numSet = sum(1 for line in lines if line.state == LineState.SET)
     if numSet > 2:
         return False

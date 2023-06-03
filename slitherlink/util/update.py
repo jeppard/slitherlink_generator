@@ -10,7 +10,7 @@ from slitherlink.model.line_state import LineState
 
 from typing import TYPE_CHECKING
 
-from slitherlink.util.generator import getConnectedPoints
+from slitherlink.util.generator import getConnectedPoints, getLinesByPoint
 if TYPE_CHECKING:
     from slitherlink.model.slitherlink import Slitherlink
     from slitherlink.model.field import Field
@@ -149,8 +149,8 @@ def setFieldLabel(field: 'Field', label: int, slitherlink: 'Slitherlink'):
 
 
 def updatePoint(point: 'Point', slitherlink: 'Slitherlink') -> list['Line']:
-    lines: list['Line'] = [line for line in filterLineByPoint(
-        slitherlink.linelist, point)]
+    lines: list['Line'] = [
+        line for line in getLinesByPoint(point, slitherlink)]
     updated: list['Line'] = []
     numSet = sum(1 for _ in filterLineByState(lines, LineState.SET))
     numUnknown = sum(1 for _ in filterLineByState(lines, LineState.UNKNOWN))

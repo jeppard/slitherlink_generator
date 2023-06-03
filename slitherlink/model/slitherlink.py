@@ -19,6 +19,11 @@ class Slitherlink():
             set([line for field in fieldlist for line in field.linelist]))
         self.paths = []
         self.patches = [set(self.points)]
+        self.linesPerPoint: dict[Point, list[Line]] = {
+            point: [] for point in self.points}
+        for line in self.linelist:
+            for point in line.points:
+                self.linesPerPoint[point].append(line)
 
     def hasOnePath(self) -> bool:
         return len(self.paths) == 1

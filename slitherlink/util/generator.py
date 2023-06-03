@@ -13,19 +13,19 @@ if TYPE_CHECKING:
     from ..model.point import Point
 
 
+@lru_cache
 def getLineNeighbors(line: Line, slitherlink: Slitherlink):
+    neighbors: list[Line] = []
     for point in line.points:
-        yield from filter(lambda x: x != line,
-                          filterLineByPoint(slitherlink.linelist, point))
+        for neighbor in getLinesByPoint(point, slitherlink):
+            if neighbor != line:
+                neighbors.append(neighbor)
+    return neighbors
 
 
 @lru_cache
 def getLinesByPoint(point: 'Point', slitherlink: Slitherlink):
-    lines = []
-    for line in slitherlink.linelist:
-        if point in line.points:
-            lines.append(line)
-    return lines
+    return slitherlink.linesPerPoint[point]
 
 
 def getConnectedPoints(point: Point, slitherlink: Slitherlink,
