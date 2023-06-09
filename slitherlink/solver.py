@@ -5,7 +5,7 @@ from slitherlink.model.error import UnsolvableError
 
 from slitherlink.model.line_state import LineState
 from typing import TYPE_CHECKING, Iterable
-from slitherlink.util.debug import timeit
+from slitherlink.util.debug import accumulate, timeit
 
 from slitherlink.util.filter import filterLineByState
 from slitherlink.util.generator import getLineNeighbors, getLinesByPoint, getUnknownPatches
@@ -62,6 +62,7 @@ def isSolvable(slitherlink: 'Slitherlink'):
     return None
 
 
+@accumulate
 def solve(slitherlink: 'Slitherlink'):  # Todo dont start at start
     from slitherlink.util.update import setLineState
 
